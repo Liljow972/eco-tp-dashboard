@@ -2,11 +2,10 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSupabaseClient } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 const AuthCallbackPage = () => {
   const router = useRouter()
-  const supabase = createSupabaseClient()
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -15,25 +14,60 @@ const AuthCallbackPage = () => {
         
         if (error) {
           console.error('Erreur lors de la récupération de la session:', error)
-          router.push('/login?error=auth_callback_error')
+          router.push('/?error=auth_callback_error')
           return
         }
 
-        if (data.session) {
-          // L'utilisateur est connecté, rediriger vers la page d'accueil
-          router.push('/')
+        if (data.session?.user) {
+          const user = data.session.user
+          
+          // Créer ou récupérer le profil utilisateur
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+
+          if (profileError && profileError.code === 'PGRST116') {
+            // Profil n'existe pas, le créer
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email || '',
+                name: user.user_metadata?.full_name || user.user_metadata?.name || 'Utilisateur Google',
+                role: 'client'
+              })
+
+            if (insertError) {
+              console.error('Erreur création profil:', insertError)
+            }
+          }
+
+          // Stocker les informations utilisateur
+          const authUser = {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Utilisateur Google',
+            role: profile?.role || 'client'
+          }
+
+          localStorage.setItem('auth_user', JSON.stringify(authUser))
+          
+          // Rediriger selon le rôle
+          router.push(authUser.role === 'admin' ? '/admin' : '/client')
         } else {
-          // Pas de session, rediriger vers la page de connexion
-          router.push('/login')
+          // Pas de session, rediriger vers la page d'accueil
+          router.push('/')
         }
       } catch (err) {
         console.error('Erreur inattendue:', err)
-        router.push('/login?error=unexpected_error')
+        router.push('/?error=unexpected_error')
       }
     }
 
     handleAuthCallback()
-  }, [router, supabase.auth])
+  }, [router])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">

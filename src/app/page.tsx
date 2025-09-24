@@ -1,120 +1,188 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { getCurrentUserDynamic, switchUser, mockProfiles } from '@/lib/mockData'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search, Users, BarChart3, FileText, Settings, Bell, LogIn, UserPlus } from 'lucide-react';
+import AuthModal from '@/components/auth/AuthModal';
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState(getCurrentUserDynamic())
+  const router = useRouter();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  const handleUserSwitch = (index: number) => {
-    switchUser(index)
-    setCurrentUser(getCurrentUserDynamic())
-  }
+  const handleUserSelection = (userType: string) => {
+    if (userType === 'client') {
+      router.push('/client');
+    } else if (userType === 'admin') {
+      router.push('/admin');
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            EcoTP - MVP Demo
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Plateforme de gestion de projets de terrassement écologique
-          </p>
-          
-          {/* Sélecteur d'utilisateur pour le MVP */}
-          <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4 mb-8">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-3">
-              🚧 Mode MVP - Sélectionnez un utilisateur pour tester
-            </h3>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {mockProfiles.map((profile, index) => (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-green-50">
+      {/* Modern Header with Background */}
+      <header className="relative overflow-hidden">
+        {/* Background Image Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-green-900/90 via-blue-900/80 to-green-800/90"></div>
+        <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-green-600/20 to-blue-600/20"></div>
+        
+        <div className="relative z-10">
+          {/* Top Navigation */}
+          <nav className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30">
+                <span className="text-white font-bold text-xl">E</span>
+              </div>
+              <div>
+                <h1 className="text-white font-bold text-xl">EcoTP</h1>
+                <p className="text-white/80 text-sm">Dashboard</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+                <Search className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+                <Bell className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+                <Settings className="w-5 h-5" />
+              </button>
+            </div>
+          </nav>
+
+          {/* Hero Content */}
+          <div className="px-6 py-16 text-center">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-5xl font-bold text-white mb-6">
+                Bonjour, bienvenue sur EcoTP
+              </h2>
+              <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
+                Restez au top de vos tâches, surveillez les progrès et suivez le statut de vos projets de terrassement écologique.
+              </p>
+              
+              {/* Access Buttons */}
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                 <button
-                  key={profile.id}
-                  onClick={() => handleUserSwitch(index)}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    currentUser.id === profile.id
-                      ? 'bg-yellow-600 text-white'
-                      : 'bg-white text-yellow-800 hover:bg-yellow-200'
-                  }`}
+                  onClick={() => {
+                    setAuthMode('login');
+                    setShowAuthModal(true);
+                  }}
+                  className="group relative w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-semibold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105"
                 >
-                  {profile.name} ({profile.role})
+                  <div className="flex items-center justify-center space-x-3">
+                    <LogIn className="w-6 h-6" />
+                    <span>Se connecter</span>
+                  </div>
                 </button>
-              ))}
+                <button
+                  onClick={() => {
+                    setAuthMode('register');
+                    setShowAuthModal(true);
+                  }}
+                  className="group relative w-full sm:w-auto px-10 py-4 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-semibold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105"
+                >
+                  <div className="flex items-center justify-center space-x-3">
+                    <UserPlus className="w-6 h-6" />
+                    <span>S'inscrire</span>
+                  </div>
+                </button>
+              </div>
             </div>
-            <p className="text-sm text-yellow-700 mt-2">
-              Utilisateur actuel: <strong>{currentUser.name}</strong> - {currentUser.role}
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Accès aux espaces de test
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Testez les fonctionnalités selon le rôle sélectionné ci-dessus.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/client"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
-              >
-                🏠 Espace Client
-              </Link>
-              <Link
-                href="/admin"
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
-              >
-                ⚙️ Espace Admin
-              </Link>
-            </div>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-green-600 text-3xl mb-4">🌱</div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Écologique
-              </h3>
-              <p className="text-gray-600">
-                Pratiques respectueuses de l'environnement
-              </p>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-blue-600 text-3xl mb-4">📊</div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Suivi en temps réel
-              </h3>
-              <p className="text-gray-600">
-                Visualisez l'avancement de vos projets
-              </p>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="text-purple-600 text-3xl mb-4">🤝</div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Collaboration
-              </h3>
-              <p className="text-gray-600">
-                Communication transparente avec votre équipe
-              </p>
-            </div>
-          </div>
-          
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">Fonctionnalités disponibles dans ce MVP:</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Vue client: Consultation des projets, suivi d'avancement, documents</li>
-              <li>• Vue admin: Gestion de tous les projets, clients, statistiques</li>
-              <li>• Données de démonstration avec 4 projets et 3 utilisateurs</li>
-              <li>• Interface responsive et moderne</li>
-            </ul>
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-16">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <span className="text-2xl">🌱</span>
+              </div>
+              <span className="text-green-600 text-sm font-medium">+12%</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">24</h3>
+            <p className="text-gray-600 text-sm">Projets Écologiques</p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-blue-600" />
+              </div>
+              <span className="text-blue-600 text-sm font-medium">+8%</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">89%</h3>
+            <p className="text-gray-600 text-sm">Taux de Réussite</p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-yellow-600" />
+              </div>
+              <span className="text-yellow-600 text-sm font-medium">+15%</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">156</h3>
+            <p className="text-gray-600 text-sm">Clients Actifs</p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <FileText className="w-6 h-6 text-purple-600" />
+              </div>
+              <span className="text-purple-600 text-sm font-medium">+22%</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">342</h3>
+            <p className="text-gray-600 text-sm">Documents</p>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl p-8 text-center transition-all duration-300 hover:-translate-y-2">
+            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+              <span className="text-3xl">🌱</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Écologique</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Pratiques respectueuses de l'environnement pour un terrassement durable et responsable
+            </p>
+          </div>
+
+          <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl p-8 text-center transition-all duration-300 hover:-translate-y-2">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+              <span className="text-3xl">📊</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Suivi en temps réel</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Visualisez l'avancement de vos projets avec des données actualisées en continu
+            </p>
+          </div>
+
+          <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl p-8 text-center transition-all duration-300 hover:-translate-y-2">
+            <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+              <span className="text-3xl">🤝</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Collaboration</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Communication transparente et efficace entre équipes, clients et partenaires
+            </p>
+          </div>
+        </div>
+      </main>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultMode={authMode}
+      />
     </div>
-  )
+  );
 }

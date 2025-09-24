@@ -1,79 +1,55 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Euro, Calendar, TrendingUp, Clock, ArrowLeft, FileText, Eye, Download } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
-  getCurrentUserDynamic, 
-  getProjectsByClientId, 
-  getProjectUpdatesByProjectId,
-  getDocumentsByProjectId,
-  type Project, 
-  type ProjectUpdate,
-  type Document
-} from '@/lib/mockData'
+  ArrowLeft, Search, Filter, Download, Eye, 
+  Calendar, DollarSign, TrendingUp, Clock,
+  FileText, Image, Archive, User, Bell, Files, Euro
+} from 'lucide-react';
+import { mockProjects, mockProjectUpdates, mockDocuments, getCurrentUserDynamic, getProjectUpdatesByProjectId, getDocumentsByProjectId, type Project } from '@/lib/mockData';
+import ModernLayout from '@/components/layout/ModernLayout';
+import FileManager from '@/components/files/FileManager';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
-const ClientPage = () => {
-  const [currentUser, setCurrentUser] = useState(getCurrentUserDynamic())
-  const [projects, setProjects] = useState<Project[]>([])
-  const [updates, setUpdates] = useState<ProjectUpdate[]>([])
-  const [documents, setDocuments] = useState<Document[]>([])
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-
-  // Charger les données du client actuel
-  useEffect(() => {
-    const user = getCurrentUserDynamic()
-    setCurrentUser(user)
-    
-    if (user.role === 'client') {
-      const userProjects = getProjectsByClientId(user.id)
-      setProjects(userProjects)
-      
-      // Charger toutes les mises à jour pour tous les projets du client
-      const allUpdates: ProjectUpdate[] = []
-      const allDocuments: Document[] = []
-      
-      userProjects.forEach(project => {
-        const projectUpdates = getProjectUpdatesByProjectId(project.id)
-        const projectDocs = getDocumentsByProjectId(project.id)
-        allUpdates.push(...projectUpdates)
-        allDocuments.push(...projectDocs)
-      })
-      
-      // Trier les mises à jour par date (plus récentes en premier)
-      allUpdates.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      setUpdates(allUpdates.slice(0, 5)) // Garder seulement les 5 plus récentes
-      setDocuments(allDocuments)
+export default function ClientPage() {
+  // Pour la page client, utilisons un client par défaut (Jean Dupont)
+  const [currentUser, setCurrentUser] = useState(() => {
+    const user = getCurrentUserDynamic();
+    // Si l'utilisateur actuel n'est pas un client, utiliser le premier client disponible
+    if (user.role !== 'client') {
+      return { id: 'client-1', email: 'client@ecotp-demo.com', name: 'Jean Dupont', role: 'client' as const, created_at: '2024-01-02T00:00:00Z' };
     }
-  }, [])
+    return user;
+  });
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
+  // Filtrer les projets pour l'utilisateur actuel
+  const userProjects = mockProjects.filter(project => 
+    project.client_id === currentUser.id
+  );
+
+  // Filtrer les mises à jour pour les projets de l'utilisateur
+  const userUpdates = mockProjectUpdates.filter(update => 
+    userProjects.some(project => project.id === update.project_id)
+  );
+
+  // Filtrer les documents pour les projets de l'utilisateur
+  const userDocuments = mockDocuments.filter(doc => 
+    userProjects.some(project => project.id === doc.project_id)
+  );
+
+  const totalBudget = userProjects.reduce((sum, project) => sum + project.budget, 0);
+  const avgProgress = userProjects.length > 0 ? Math.round(userProjects.reduce((sum, project) => sum + project.progress, 0) / userProjects.length) : 0;
+  
   // Calculer les statistiques
-  const stats = projects.reduce((acc, project) => {
-    return {
-      budget: acc.budget + (project.budget || 0),
-      spent: acc.spent + (project.spent || 0),
-      progress: projects.length > 0 ? Math.round(projects.reduce((sum, p) => sum + p.progress, 0) / projects.length) : 0
-    }
-  }, { budget: 0, spent: 0, progress: 0 })
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending': return 'En attente'
-      case 'in_progress': return 'En cours'
-      case 'completed': return 'Terminé'
-      default: return status
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'in_progress': return 'bg-blue-100 text-blue-800'
-      case 'completed': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
+  const stats = {
+    budget: totalBudget,
+    spent: Math.round(totalBudget * (avgProgress / 100)), // Estimation basée sur le progrès
+    progress: avgProgress
+  };
 
   const chartData = [
     {
@@ -92,6 +68,30 @@ const ClientPage = () => {
       fill: '#94a3b8'
     }
   ]
+
+  // Charger les données du client actuel
+  useEffect(() => {
+    const user = getCurrentUserDynamic();
+    setCurrentUser(user);
+  }, []);
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending': return 'En attente'
+      case 'in_progress': return 'En cours'
+      case 'completed': return 'Terminé'
+      default: return status
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800'
+      case 'in_progress': return 'bg-blue-100 text-blue-800'
+      case 'completed': return 'bg-green-100 text-green-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   if (selectedProject) {
     const projectUpdates = getProjectUpdatesByProjectId(selectedProject.id)
@@ -225,26 +225,42 @@ const ClientPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Espace Client</h1>
-              <p className="text-sm text-gray-500">Bienvenue {currentUser.name}</p>
-            </div>
-            <Link
-              href="/"
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
-            >
-              🏠 Accueil
-            </Link>
-          </div>
-        </div>
+    <ModernLayout
+      title="Espace Client"
+      subtitle="Gérez vos projets de terrassement écologique"
+      userRole="client"
+      userName="Jean Dupont"
+    >
+      {/* Navigation Tabs */}
+      <div className="mb-8">
+        <nav className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              activeTab === 'dashboard'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            Tableau de bord
+          </button>
+          <button
+            onClick={() => setActiveTab('files')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              activeTab === 'files'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Files className="w-4 h-4 mr-2 inline" />
+            Mes Documents
+          </button>
+        </nav>
       </div>
 
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      {/* Tab Content */}
+      {activeTab === 'dashboard' && (
+        <div>
           {/* Alerte MVP */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex">
@@ -329,7 +345,7 @@ const ClientPage = () => {
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Projets actifs</dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        {projects.filter(p => p.status === 'in_progress').length}
+                        {userProjects.filter(p => p.status === 'in_progress').length}
                       </dd>
                     </dl>
                   </div>
@@ -362,8 +378,8 @@ const ClientPage = () => {
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Dernières mises à jour</h3>
                 <div className="space-y-4 max-h-64 overflow-y-auto">
-                  {updates.length > 0 ? updates.map((update) => {
-                    const project = projects.find(p => p.id === update.project_id)
+                  {userUpdates.length > 0 ? userUpdates.map((update) => {
+                    const project = userProjects.find(p => p.id === update.project_id)
                     return (
                       <div key={update.id} className="border-l-4 border-blue-500 pl-4">
                         <h4 className="font-medium text-gray-900">{update.title}</h4>
@@ -392,7 +408,7 @@ const ClientPage = () => {
                 </p>
               </div>
               <ul className="divide-y divide-gray-200">
-                {projects.map((project) => (
+                {userProjects.map((project) => (
                   <li key={project.id}>
                     <button
                       onClick={() => setSelectedProject(project)}
@@ -437,9 +453,14 @@ const ClientPage = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+
+      {activeTab === 'files' && (
+         <FileManager
+           userRole="client"
+           projectId="project-1"
+         />
+       )}
+    </ModernLayout>
   )
 }
-
-export default ClientPage
