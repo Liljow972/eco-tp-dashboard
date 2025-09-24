@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
 import { 
   Euro, Users, Briefcase, TrendingUp, Eye, Search, Filter, Bell, Settings, User, Home, 
@@ -22,6 +23,7 @@ import FileManager from '@/components/files/FileManager'
 import NewClientModal from '@/components/admin/NewClientModal'
 
 const AdminPage = () => {
+  const router = useRouter()
   const [currentUser, setCurrentUser] = useState(getCurrentUserDynamic())
   const [projects, setProjects] = useState<Project[]>([])
   const [clients, setClients] = useState<Profile[]>([])
@@ -238,7 +240,7 @@ const AdminPage = () => {
           </div>
         )}
 
-        {activeTab !== 'files' && (
+        {activeTab === 'overview' && (
           <>
             {/* Welcome Section */}
             <div className="mb-8">
@@ -385,160 +387,164 @@ const AdminPage = () => {
             </div>
           </div>
         </div>
-        {/* Clients Management */}
-        <div className="bg-white rounded-2xl shadow-lg mb-8">
-          <div className="px-6 py-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-bold text-gray-900">Gestion des Clients</h3>
-              <div className="flex items-center space-x-3">
-                <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
-                  <Filter className="w-4 h-4" />
-                  <span>Filtrer</span>
-                </button>
-                <button 
-                  onClick={() => setShowNewClientModal(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Nouveau Client</span>
-                </button>
+        {/* Clients Tab Content */}
+        {activeTab === 'clients' && (
+          <div className="bg-white rounded-2xl shadow-lg mb-8">
+            <div className="px-6 py-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-gray-900">Gestion des Clients</h3>
+                <div className="flex items-center space-x-3">
+                  <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
+                    <Filter className="w-4 h-4" />
+                    <span>Filtrer</span>
+                  </button>
+                  <button 
+                    onClick={() => setShowNewClientModal(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Nouveau Client</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="grid gap-4">
+                {clients.map((client) => {
+                  const clientProjects = projects.filter(p => p.client_id === client.id)
+                  const clientBudget = clientProjects.reduce((sum, p) => sum + p.budget, 0)
+                  const clientProgress = clientProjects.length > 0 
+                    ? Math.round(clientProjects.reduce((sum, p) => sum + p.progress, 0) / clientProjects.length)
+                    : 0
+
+                  return (
+                    <div key={client.id} className="group border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:border-green-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center">
+                            <span className="text-white font-bold text-xl">
+                              {client.name.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-1">{client.name}</h4>
+                            <p className="text-gray-600">{client.email}</p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <span className="flex items-center space-x-1 text-sm text-gray-500">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                <span>Actif</span>
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                Membre depuis {new Date().getFullYear() - 1}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-8">
+                          <div className="text-center">
+                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                              <Target className="w-6 h-6 text-blue-600" />
+                            </div>
+                            <p className="text-sm text-gray-500 mb-1">Projets</p>
+                            <p className="text-xl font-bold text-gray-900">{clientProjects.length}</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                              <DollarSign className="w-6 h-6 text-green-600" />
+                            </div>
+                            <p className="text-sm text-gray-500 mb-1">Budget</p>
+                            <p className="text-xl font-bold text-gray-900">{(clientBudget / 1000).toFixed(0)}K€</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                              <TrendingUp className="w-6 h-6 text-yellow-600" />
+                            </div>
+                            <p className="text-sm text-gray-500 mb-1">Progression</p>
+                            <p className="text-xl font-bold text-gray-900">{clientProgress}%</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-colors font-medium">
+                              Voir Détails
+                            </button>
+                            <button className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
-          <div className="p-6">
-            <div className="grid gap-4">
-              {clients.map((client) => {
-                const clientProjects = projects.filter(p => p.client_id === client.id)
-                const clientBudget = clientProjects.reduce((sum, p) => sum + p.budget, 0)
-                const clientProgress = clientProjects.length > 0 
-                  ? Math.round(clientProjects.reduce((sum, p) => sum + p.progress, 0) / clientProjects.length)
-                  : 0
+        )}
 
-                return (
-                  <div key={client.id} className="group border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:border-green-200">
+        {/* Projects Tab Content */}
+        {activeTab === 'projects' && (
+          <div className="bg-white rounded-2xl shadow-lg mb-8">
+            <div className="px-6 py-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-gray-900">Projets ({filteredProjects.length})</h3>
+                <div className="flex items-center space-x-3">
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500">
+                    <option value="all">Tous les statuts</option>
+                    <option value="pending">En attente</option>
+                    <option value="in_progress">En cours</option>
+                    <option value="completed">Terminé</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="grid gap-4">
+                {filteredProjects.map((project) => (
+                  <div key={project.id} className="border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center">
-                          <span className="text-white font-bold text-xl">
-                            {client.name.charAt(0)}
-                          </span>
+                        <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
+                          <span className="text-blue-600 font-bold text-lg">{project.progress}%</span>
                         </div>
                         <div>
-                          <h4 className="text-xl font-bold text-gray-900 mb-1">{client.name}</h4>
-                          <p className="text-gray-600">{client.email}</p>
+                          <h4 className="text-xl font-bold text-gray-900 mb-1">{project.name}</h4>
+                          <p className="text-gray-600">Client: {getClientName(project.client_id)}</p>
                           <div className="flex items-center space-x-4 mt-2">
-                            <span className="flex items-center space-x-1 text-sm text-gray-500">
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                              <span>Actif</span>
+                            <span className="text-sm text-gray-500">
+                              Budget: {project.budget.toLocaleString('fr-FR')}€
                             </span>
                             <span className="text-sm text-gray-500">
-                              Membre depuis {new Date().getFullYear() - 1}
+                              Dépensé: {project.spent.toLocaleString('fr-FR')}€
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-8">
-                        <div className="text-center">
-                          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-                            <Target className="w-6 h-6 text-blue-600" />
+                      <div className="flex items-center space-x-6">
+                        <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(project.status)}`}>
+                          {getStatusLabel(project.status)}
+                        </span>
+                        <div className="w-32">
+                          <div className="flex justify-between text-sm text-gray-600 mb-1">
+                            <span>Progression</span>
+                            <span>{project.progress}%</span>
                           </div>
-                          <p className="text-sm text-gray-500 mb-1">Projets</p>
-                          <p className="text-xl font-bold text-gray-900">{clientProjects.length}</p>
-                        </div>
-                        <div className="text-center">
-                          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-                            <DollarSign className="w-6 h-6 text-green-600" />
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300" style={{ width: `${project.progress}%` }}></div>
                           </div>
-                          <p className="text-sm text-gray-500 mb-1">Budget</p>
-                          <p className="text-xl font-bold text-gray-900">{(clientBudget / 1000).toFixed(0)}K€</p>
                         </div>
-                        <div className="text-center">
-                          <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-                            <TrendingUp className="w-6 h-6 text-yellow-600" />
-                          </div>
-                          <p className="text-sm text-gray-500 mb-1">Progression</p>
-                          <p className="text-xl font-bold text-gray-900">{clientProgress}%</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-colors font-medium">
-                            Voir Détails
-                          </button>
-                          <button className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => router.push(`/admin/projects/${project.id}`)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-colors font-medium"
+                        >
+                          Voir Détails
+                        </button>
                       </div>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Projects List */}
-        <div className="bg-white rounded-2xl shadow-lg mb-8">
-          <div className="px-6 py-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-bold text-gray-900">Projets ({filteredProjects.length})</h3>
-              <div className="flex items-center space-x-3">
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500">
-                  <option value="all">Tous les statuts</option>
-                  <option value="pending">En attente</option>
-                  <option value="in_progress">En cours</option>
-                  <option value="completed">Terminé</option>
-                </select>
+                ))}
               </div>
             </div>
           </div>
-          <div className="p-6">
-            <div className="grid gap-4">
-              {filteredProjects.map((project) => (
-                <div key={project.id} className="border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
-                        <span className="text-blue-600 font-bold text-lg">{project.progress}%</span>
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-bold text-gray-900 mb-1">{project.name}</h4>
-                        <p className="text-gray-600">Client: {getClientName(project.client_id)}</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-sm text-gray-500">
-                            Budget: {project.budget.toLocaleString('fr-FR')}€
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            Dépensé: {project.spent.toLocaleString('fr-FR')}€
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-6">
-                      <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(project.status)}`}>
-                        {getStatusLabel(project.status)}
-                      </span>
-                      <div className="w-32">
-                        <div className="flex justify-between text-sm text-gray-600 mb-1">
-                          <span>Progression</span>
-                          <span>{project.progress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300" style={{ width: `${project.progress}%` }}></div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setSelectedProject(project)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-colors font-medium"
-                      >
-                        Voir Détails
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
           </>
         )}
         

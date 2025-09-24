@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -45,8 +45,79 @@ export default function ModernLayout({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  // Mock notifications data
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: 'Nouveau projet assigné',
+      message: 'Le projet "Rénovation énergétique" vous a été assigné',
+      time: '5 min',
+      read: false,
+      type: 'project'
+    },
+    {
+      id: 2,
+      title: 'Document téléchargé',
+      message: 'Le client a téléchargé un nouveau document',
+      time: '1h',
+      read: false,
+      type: 'document'
+    },
+    {
+      id: 3,
+      title: 'Rapport mensuel disponible',
+      message: 'Votre rapport mensuel est prêt à être consulté',
+      time: '2h',
+      read: true,
+      type: 'report'
+    },
+    {
+      id: 4,
+      title: 'Mise à jour système',
+      message: 'Une nouvelle version de l\'application est disponible',
+      time: '1j',
+      read: true,
+      type: 'system'
+    }
+  ]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = (id: number) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(notif => ({ ...notif, read: true }))
+    );
+  };
 
   const currentNavigation = navigation[userRole];
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.notification-dropdown') && !target.closest('.notification-button')) {
+        setNotificationsOpen(false);
+      }
+      if (!target.closest('.user-menu-dropdown') && !target.closest('.user-menu-button')) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-blue-50">
@@ -98,16 +169,91 @@ export default function ModernLayout({
               </div>
 
               {/* Notifications */}
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors relative">
-                <Bell className="w-5 h-5" />
-                <span className="notification-badge"></span>
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className="notification-button p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors relative"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown */}
+                {notificationsOpen && (
+                  <div className="notification-dropdown absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
+                    <div className="p-4 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            Tout marquer comme lu
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                          Aucune notification
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            onClick={() => markAsRead(notification.id)}
+                            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+                              !notification.read ? 'bg-blue-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className={`w-2 h-2 rounded-full mt-2 ${
+                                !notification.read ? 'bg-blue-500' : 'bg-gray-300'
+                              }`}></div>
+                              <div className="flex-1">
+                                <h4 className={`text-sm font-medium ${
+                                  !notification.read ? 'text-gray-900' : 'text-gray-700'
+                                }`}>
+                                  {notification.title}
+                                </h4>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {notification.time}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    <div className="p-4 border-t border-gray-200">
+                      <Link
+                        href="/notifications"
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        onClick={() => setNotificationsOpen(false)}
+                      >
+                        Voir toutes les notifications
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* User Menu */}
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center space-x-3 bg-gray-100 rounded-xl px-3 py-2 hover:bg-gray-200 transition-colors"
+                  className="user-menu-button flex items-center space-x-3 bg-gray-100 rounded-xl px-3 py-2 hover:bg-gray-200 transition-colors"
                 >
                   <div className="avatar avatar-sm">
                     <span>{userName.charAt(0)}</span>
@@ -118,7 +264,7 @@ export default function ModernLayout({
 
                 {/* User Dropdown */}
                 {userMenuOpen && (
-                  <div className="dropdown-menu">
+                  <div className="user-menu-dropdown dropdown-menu">
                     <Link href="/profile" className="dropdown-item">
                       <User className="w-4 h-4 mr-3" />
                       Profil
