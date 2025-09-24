@@ -24,10 +24,10 @@ export interface AuthUser {
 }
 
 export class AuthService {
-  // Connexion avec email/mot de passe
+  // Connexion avec email/mot de passe (Mode MVP - comptes de test uniquement)
   static async signInWithEmail(email: string, password: string): Promise<{ user: AuthUser | null, error: string | null }> {
     try {
-      // Vérifier les comptes de test d'abord
+      // Mode MVP : utiliser uniquement les comptes de test
       const testAccount = Object.values(TEST_ACCOUNTS).find(account => 
         account.email === email && account.password === password
       );
@@ -45,128 +45,43 @@ export class AuthService {
         return { user, error: null };
       }
 
-      // Sinon, essayer avec Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return { user: null, error: error.message };
-      }
-
-      if (data.user) {
-        // Récupérer le profil utilisateur
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        const user: AuthUser = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: profile?.name || data.user.user_metadata?.name || '',
-          role: profile?.role || 'client'
-        };
-
-        localStorage.setItem('auth_user', JSON.stringify(user));
-        return { user, error: null };
-      }
-
-      return { user: null, error: 'Échec de la connexion' };
+      // En mode MVP, retourner une erreur si ce n'est pas un compte de test
+      return { user: null, error: 'Email ou mot de passe incorrect. Utilisez les comptes de test : client@ecotp.test / admin@ecotp.test' };
     } catch (error) {
       return { user: null, error: 'Erreur de connexion' };
     }
   }
 
-  // Inscription avec email/mot de passe
+  // Inscription avec email/mot de passe (Mode MVP - simulation uniquement)
   static async signUpWithEmail(email: string, password: string, name: string, role: 'client' | 'admin'): Promise<{ user: AuthUser | null, error: string | null }> {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Mode MVP : simuler l'inscription
+      if (password.length < 6) {
+        return { user: null, error: 'Le mot de passe doit contenir au moins 6 caractères' };
+      }
+
+      // Vérifier si l'email existe déjà dans les comptes de test
+      const existingAccount = Object.values(TEST_ACCOUNTS).find(account => account.email === email);
+      if (existingAccount) {
+        return { user: null, error: 'Un compte avec cet email existe déjà' };
+      }
+
+      // Simuler la création d'un nouveau compte
+      const user: AuthUser = {
+        id: `demo-${Date.now()}`,
         email,
-        password,
-        options: {
-          data: {
-            name,
-            role
-          }
-        }
-      });
+        name,
+        role
+      };
 
-      if (error) {
-        return { user: null, error: error.message };
-      }
-
-      if (data.user) {
-        // Créer le profil utilisateur
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email,
-            name,
-            role
-          });
-
-        if (profileError) {
-          console.error('Erreur création profil:', profileError);
-        }
-
-        const user: AuthUser = {
-          id: data.user.id,
-          email,
-          name,
-          role
-        };
-
-        localStorage.setItem('auth_user', JSON.stringify(user));
-        return { user, error: null };
-      }
-
-      return { user: null, error: 'Échec de l\'inscription' };
+      localStorage.setItem('auth_user', JSON.stringify(user));
+      return { user, error: null };
     } catch (error) {
       return { user: null, error: 'Erreur d\'inscription' };
     }
   }
 
-  // Connexion avec Google
-  static async signInWithGoogle(): Promise<{ user: AuthUser | null, error: string | null }> {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
 
-      if (error) {
-        // Fallback pour la démo - simuler une connexion Google
-        const mockGoogleUser: AuthUser = {
-          id: 'google-demo-user',
-          email: 'demo@google.com',
-          name: 'Utilisateur Google Demo',
-          role: 'client'
-        };
-        
-        localStorage.setItem('auth_user', JSON.stringify(mockGoogleUser));
-        return { user: mockGoogleUser, error: null };
-      }
-
-      return { user: null, error: null }; // La redirection va gérer le reste
-    } catch (error) {
-      // Fallback pour la démo
-      const mockGoogleUser: AuthUser = {
-        id: 'google-demo-user',
-        email: 'demo@google.com',
-        name: 'Utilisateur Google Demo',
-        role: 'client'
-      };
-      
-      localStorage.setItem('auth_user', JSON.stringify(mockGoogleUser));
-      return { user: mockGoogleUser, error: null };
-    }
-  }
 
   // Déconnexion
   static async signOut(): Promise<void> {

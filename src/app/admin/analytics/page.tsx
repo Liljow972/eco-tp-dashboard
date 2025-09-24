@@ -291,7 +291,7 @@ export default function AdminAnalyticsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-gray-100">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-blue-600">{(totalBudget / 1000).toFixed(0)}K€</p>
                       <p className="text-sm text-gray-500">Budget Total</p>

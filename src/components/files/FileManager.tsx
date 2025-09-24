@@ -86,6 +86,8 @@ export default function FileManager({ userRole, projectId, clientId }: FileManag
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Charger les fichiers depuis l'API
@@ -181,25 +183,36 @@ export default function FileManager({ userRole, projectId, clientId }: FileManag
     link.click();
   };
 
-  const handleDelete = async (fileId: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce fichier ?')) {
-      try {
-        const response = await fetch(`/api/files?id=${fileId}`, {
-          method: 'DELETE',
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          setFiles(prev => prev.filter(f => f.id !== fileId));
-        } else {
-          alert('Erreur lors de la suppression du fichier');
-        }
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
+  const handleDeleteClick = (file: FileItem) => {
+    setFileToDelete(file);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!fileToDelete) return;
+
+    try {
+      const response = await fetch(`/api/files?id=${fileToDelete.id}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setFiles(prev => prev.filter(f => f.id !== fileToDelete.id));
+        setShowDeleteModal(false);
+        setFileToDelete(null);
+      } else {
         alert('Erreur lors de la suppression du fichier');
       }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression du fichier');
     }
+  };
+
+  const canDeleteFile = (file: FileItem) => {
+    return userRole === 'admin' || file.uploadedBy === 'Client';
   };
 
   return (
@@ -314,10 +327,11 @@ export default function FileManager({ userRole, projectId, clientId }: FileManag
                       Télécharger
                     </button>
                     
-                    {userRole === 'admin' && (
+                    {canDeleteFile(file) && (
                       <button
-                        onClick={() => handleDelete(file.id)}
+                        onClick={() => handleDeleteClick(file)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Supprimer le fichier"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -427,6 +441,47 @@ export default function FileManager({ userRole, projectId, clientId }: FileManag
                   <p className="text-sm text-gray-500">{uploadProgress}% terminé</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && fileToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all animate-scale-in">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-red-600" />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Supprimer le fichier
+              </h3>
+              
+              <p className="text-gray-600 text-center mb-6">
+                Êtes-vous sûr de vouloir supprimer le fichier <br />
+                <span className="font-medium text-gray-900">"{fileToDelete.name}"</span> ?<br />
+                Cette action est irréversible.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setFileToDelete(null);
+                  }}
+                  className="btn-secondary flex-1"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Supprimer
+                </button>
+              </div>
             </div>
           </div>
         </div>

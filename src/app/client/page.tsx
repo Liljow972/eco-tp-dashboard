@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Search, Filter, Download, Eye, 
   Calendar, DollarSign, TrendingUp, Clock,
-  FileText, Image, Archive, User, Bell, Files, Euro
+  FileText, Image, Archive, User, Bell, Files, Euro,
+  Home, Users, BarChart3, Settings, HelpCircle, Menu, X, ChevronDown, LogOut
 } from 'lucide-react';
 import { mockProjects, mockProjectUpdates, mockDocuments, getCurrentUserDynamic, getProjectUpdatesByProjectId, getDocumentsByProjectId, type Project } from '@/lib/mockData';
-import ModernLayout from '@/components/layout/ModernLayout';
 import FileManager from '@/components/files/FileManager';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
@@ -225,12 +225,46 @@ export default function ClientPage() {
   }
 
   return (
-    <ModernLayout
-      title="Espace Client"
-      subtitle="Gérez vos projets de terrassement écologique"
-      userRole="client"
-      userName="Jean Dupont"
-    >
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">E</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <h1 className="text-2xl font-bold text-gray-900">EcoTP</h1>
+                <p className="text-sm text-gray-500">Espace Client - {currentUser.name}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 text-gray-400 hover:text-gray-600">
+                <Search className="h-5 w-5" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
+                <Bell className="h-5 w-5" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
+                <Settings className="h-5 w-5" />
+              </button>
+              <Link
+                href="/"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
+              >
+                🏠 Accueil
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
       {/* Navigation Tabs */}
       <div className="mb-8">
         <nav className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm">
@@ -461,6 +495,8 @@ export default function ClientPage() {
            projectId="project-1"
          />
        )}
-    </ModernLayout>
+        </div>
+      </div>
+    </div>
   )
 }

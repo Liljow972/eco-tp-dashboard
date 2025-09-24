@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, Chrome, AlertCircle } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { AuthService, TEST_ACCOUNTS } from '@/lib/auth';
 
 interface AuthModalProps {
@@ -78,28 +78,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
     }
   };
 
-  const handleGoogleAuth = async () => {
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      const { user, error } = await AuthService.signInWithGoogle();
-
-      if (error) {
-        setError(error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (user) {
-        onClose();
-        window.location.href = user.role === 'admin' ? '/admin' : '/client';
-      }
-    } catch (err) {
-      setError('Erreur de connexion Google');
-      setIsLoading(false);
-    }
-  };
 
   const fillTestAccount = (type: 'client' | 'admin') => {
     const account = TEST_ACCOUNTS[type];
@@ -121,10 +100,10 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all animate-scale-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md transform transition-all animate-scale-in max-h-[95vh] overflow-y-auto">
         {/* Header */}
-        <div className="relative p-6 pb-0">
+        <div className="relative p-4 sm:p-6 pb-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
@@ -132,11 +111,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
             <X className="w-5 h-5" />
           </button>
           
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-white font-bold text-2xl">E</span>
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 gradient-primary rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg">
+              <span className="text-white font-bold text-lg sm:text-2xl">E</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               {mode === 'login' ? 'Connexion' : 'Inscription'}
             </h2>
             <p className="text-gray-600">
@@ -149,9 +128,9 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
         </div>
 
         {/* Test Accounts Section */}
-        <div className="px-6 pb-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-            <h4 className="text-sm font-medium text-blue-900 mb-2">🧪 Comptes de test disponibles :</h4>
+        <div className="px-4 sm:px-6 pb-3 sm:pb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
+            <h4 className="text-xs sm:text-sm font-medium text-blue-900 mb-2">🧪 Comptes de test disponibles :</h4>
             <div className="space-y-2">
               <button
                 type="button"
@@ -174,7 +153,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
         </div>
 
         {/* Form */}
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6">
           {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2">
@@ -304,26 +283,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
               )}
             </button>
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">ou</span>
-              </div>
-            </div>
 
-            {/* Google Auth Button */}
-            <button
-              type="button"
-              onClick={handleGoogleAuth}
-              disabled={isLoading}
-              className="btn-secondary w-full"
-            >
-              <Chrome className="w-5 h-5 mr-2" />
-              {mode === 'login' ? 'Continuer avec Google' : 'S\'inscrire avec Google'}
-            </button>
 
             {/* Mode Switch */}
             <div className="text-center mt-6">

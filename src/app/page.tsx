@@ -9,6 +9,9 @@ export default function Home() {
   const router = useRouter();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleUserSelection = (userType: string) => {
     if (userType === 'client') {
@@ -40,13 +43,26 @@ export default function Home() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+              <button 
+                onClick={() => setShowSearch(!showSearch)}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                title="Rechercher"
+              >
                 <Search className="w-5 h-5" />
               </button>
-              <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                title="Notifications"
+              >
                 <Bell className="w-5 h-5" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
               </button>
-              <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                title="Paramètres"
+              >
                 <Settings className="w-5 h-5" />
               </button>
             </div>
@@ -183,6 +199,123 @@ export default function Home() {
         onClose={() => setShowAuthModal(false)}
         defaultMode={authMode}
       />
+
+      {/* Search Modal */}
+      {showSearch && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-20 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all animate-scale-in">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Rechercher</h3>
+                <button
+                  onClick={() => setShowSearch(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Rechercher des projets, documents, utilisateurs..."
+                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  autoFocus
+                />
+              </div>
+              <div className="mt-4 text-sm text-gray-500">
+                Tapez pour rechercher dans tous les contenus de la plateforme
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notifications Modal */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-20 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all animate-scale-in">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-blue-900">Nouveau projet ajouté</span>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-1">Il y a 2 heures</p>
+                </div>
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-900">Projet terminé</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-1">Il y a 1 jour</p>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700">Mise à jour système</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Il y a 3 jours</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-20 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all animate-scale-in">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Paramètres</h3>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Mode sombre</span>
+                  <button className="w-12 h-6 bg-gray-200 rounded-full relative transition-colors">
+                    <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-transform"></div>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Notifications</span>
+                  <button className="w-12 h-6 bg-blue-500 rounded-full relative transition-colors">
+                    <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 transition-transform"></div>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Langue</span>
+                  <select className="text-sm border border-gray-300 rounded-lg px-3 py-1">
+                    <option>Français</option>
+                    <option>English</option>
+                  </select>
+                </div>
+                <hr className="my-4" />
+                <button className="w-full text-left text-sm text-red-600 hover:text-red-700 font-medium">
+                  Se déconnecter
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
