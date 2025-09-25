@@ -7,6 +7,20 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Configuration des fonctions
+[functions]
+  node_bundler = "esbuild"
+
+# Headers pour les API
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
 
 # Redirections pour les routes dynamiques
 [[redirects]]
@@ -19,13 +33,7 @@
   to = "/admin/projects/[id]"
   status = 200
 
-# Redirection pour les routes API vers les fonctions Netlify
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-# Redirection par défaut pour SPA
+# Redirection par défaut pour les SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"

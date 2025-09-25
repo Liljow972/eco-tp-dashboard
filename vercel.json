@@ -1,5 +1,25 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key"
+  },
+  "regions": ["cdg1"],
+  "rewrites": [
+    {
+      "source": "/admin/clients/:id",
+      "destination": "/admin/clients/[id]"
+    },
+    {
+      "source": "/admin/projects/:id", 
+      "destination": "/admin/projects/[id]"
+    }
+  ]
 }

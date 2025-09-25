@@ -1,0 +1,23 @@
+{
+  "name": "eco-tp-dashboard",
+  "description": "Dashboard de gestion de projets de terrassement écologique",
+  "repository": "https://github.com/Liljow972/eco-tp-dashboard",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["node", "express", "static"],
+  "image": "heroku/nodejs",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": {
+      "description": "URL de votre projet Supabase",
+      "required": true
+    },
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": {
+      "description": "Clé anonyme de votre projet Supabase",
+      "required": true
+    }
+  }
+}
