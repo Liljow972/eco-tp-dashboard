@@ -38,7 +38,20 @@ export default function AdminClientsPage() {
   const [showNewClientModal, setShowNewClientModal] = useState(false)
 
   useEffect(() => {
-    setClients(getAllClients())
+    // Transformer les Profile en Client avec les propriétés attendues
+    const profiles = getAllClients()
+    const transformedClients: Client[] = profiles.map(profile => ({
+      id: profile.id,
+      name: profile.name,
+      email: profile.email || `${profile.name.toLowerCase().replace(' ', '.')}@email.com`,
+      phone: '+33 1 23 45 67 89', // Valeur par défaut
+      company: 'Non spécifiée', // Valeur par défaut car non présente dans Profile
+      address: 'Paris, France', // Valeur par défaut
+      created_at: profile.created_at,
+      status: 'active' as const // Statut par défaut
+    }))
+    
+    setClients(transformedClients)
     setProjects(getAllProjects())
   }, [])
 

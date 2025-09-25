@@ -40,9 +40,19 @@ export default function ProjectDetails() {
         if (foundProject) {
           // Enrichir les données du projet avec des détails supplémentaires
           const enrichedProject: Project = {
-            ...foundProject,
-            description: foundProject.description || "Description détaillée du projet d'éco-construction.",
-            location: foundProject.location || "Paris, France",
+            id: foundProject.id,
+            name: foundProject.name,
+            client: 'Client par défaut', // Transformation nécessaire car mockData utilise client_id
+            status: foundProject.status === 'in_progress' ? 'En cours' : 
+                   foundProject.status === 'completed' ? 'Terminé' : 
+                   foundProject.status === 'pending' ? 'En attente' : 'Annulé',
+            progress: foundProject.progress,
+            budget: foundProject.budget,
+            spent: foundProject.spent,
+            startDate: foundProject.start_date, // Transformation de start_date vers startDate
+            endDate: foundProject.end_date, // Transformation de end_date vers endDate
+            description: "Description détaillée du projet d'éco-construction.",
+            location: "Paris, France",
             tasks: [
               { id: '1', name: 'Étude de faisabilité', status: 'completed', dueDate: '2024-01-15' },
               { id: '2', name: 'Conception architecturale', status: 'completed', dueDate: '2024-02-01' },

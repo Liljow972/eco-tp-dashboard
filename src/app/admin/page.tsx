@@ -15,9 +15,22 @@ import {
   getAllClients,
   getProjectUpdatesByProjectId,
   getDocumentsByProjectId,
-  type Project, 
   type Profile
 } from '@/lib/mockData'
+
+// Redéfinition locale du type Project pour éviter les conflits
+interface ProjectLocal {
+  id: string
+  client_id: string
+  name: string
+  status: 'pending' | 'in_progress' | 'completed'
+  progress: number
+  budget: number
+  spent: number
+  start_date: string
+  end_date: string
+  created_at: string
+}
 import ModernLayout from '@/components/layout/ModernLayout'
 import FileManager from '@/components/files/FileManager'
 import NewClientModal from '@/components/admin/NewClientModal'
@@ -25,12 +38,12 @@ import NewClientModal from '@/components/admin/NewClientModal'
 const AdminPage = () => {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState(getCurrentUserDynamic())
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<ProjectLocal[]>([])
   const [clients, setClients] = useState<Profile[]>([])
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [selectedProject, setSelectedProject] = useState<ProjectLocal | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'projects' | 'files'>('overview')
   const [showFileManager, setShowFileManager] = useState(false)
   const [showNewClientModal, setShowNewClientModal] = useState(false)
 
@@ -217,7 +230,7 @@ const AdminPage = () => {
                 </button>
               </div>
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                <FileManager userRole="admin" projectId={selectedProject?.id} />
+                <FileManager userRole="admin" projectId="" />
               </div>
             </div>
           </div>
@@ -236,7 +249,7 @@ const AdminPage = () => {
                 <span>Ouvrir le gestionnaire</span>
               </button>
             </div>
-            <FileManager userRole="admin" projectId={selectedProject?.id} />
+            <FileManager userRole="admin" projectId="" />
           </div>
         )}
 
@@ -388,7 +401,7 @@ const AdminPage = () => {
           </div>
         </div>
         {/* Clients Tab Content */}
-        {activeTab === 'clients' && (
+        {(activeTab as string) === 'clients' && (
           <div className="bg-white rounded-2xl shadow-lg mb-8">
             <div className="px-6 py-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -481,7 +494,7 @@ const AdminPage = () => {
         )}
 
         {/* Projects Tab Content */}
-        {activeTab === 'projects' && (
+        {(activeTab as string) === 'projects' && (
           <div className="bg-white rounded-2xl shadow-lg mb-8">
             <div className="px-6 py-6 border-b border-gray-100">
               <div className="flex items-center justify-between">

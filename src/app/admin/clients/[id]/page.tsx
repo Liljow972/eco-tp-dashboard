@@ -35,18 +35,18 @@ export default function ClientDetails() {
         
         if (foundClient) {
           // Filtrer les projets du client
-          const projectsForClient = projects.filter(p => p.client === foundClient.name);
+          const projectsForClient = projects.filter(p => p.client_id === foundClient.id);
           
           // Enrichir les données du client
           const enrichedClient: Client = {
             id: foundClient.id,
             name: foundClient.name,
             email: foundClient.email || `${foundClient.name.toLowerCase().replace(' ', '.')}@email.com`,
-            phone: foundClient.phone || '+33 1 23 45 67 89',
-            address: foundClient.address || 'Paris, France',
-            joinDate: foundClient.joinDate || '2023-01-15',
+            phone: '+33 1 23 45 67 89', // Valeur par défaut car non présente dans Profile
+            address: 'Paris, France', // Valeur par défaut car non présente dans Profile
+            joinDate: foundClient.created_at.split('T')[0], // Utiliser created_at du Profile
             totalProjects: projectsForClient.length,
-            activeProjects: projectsForClient.filter(p => p.status === 'En cours').length,
+            activeProjects: projectsForClient.filter(p => p.status === 'in_progress').length,
             totalSpent: projectsForClient.reduce((sum, p) => sum + p.spent, 0),
             avgProgress: Math.round(projectsForClient.reduce((sum, p) => sum + p.progress, 0) / projectsForClient.length) || 0
           };
