@@ -35,7 +35,7 @@ import ModernLayout from '@/components/layout/ModernLayout'
 import FileManager from '@/components/files/FileManager'
 import NewClientModal from '@/components/admin/NewClientModal'
 
-const AdminPage = () => {
+export default function AdminPage() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState(getCurrentUserDynamic())
   const [projects, setProjects] = useState<ProjectLocal[]>([])
@@ -570,5 +570,3 @@ const AdminPage = () => {
     </ModernLayout>
   )
 }
-
-export default AdminPage

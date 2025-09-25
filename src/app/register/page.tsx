@@ -44,7 +44,7 @@ const RegisterPage = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
           data: {
             first_name: firstName,
             last_name: lastName,
