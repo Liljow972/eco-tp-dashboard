@@ -21,16 +21,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Configuration pour les redirections
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/login',
-        permanent: false,
-      },
-    ]
-  },
+  // Forcer le mode serveur (pas d'export statique)
+  output: undefined,
 }
 
 module.exports = nextConfig

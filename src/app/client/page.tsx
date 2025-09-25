@@ -8,41 +8,268 @@ import {
   FileText, Image, Archive, User, Bell, Files, Euro,
   Home, Users, BarChart3, Settings, HelpCircle, Menu, X, ChevronDown, LogOut
 } from 'lucide-react';
-import { mockProjects, mockProjectUpdates, mockDocuments, getCurrentUserDynamic, getProjectUpdatesByProjectId, getDocumentsByProjectId, type Project } from '@/lib/mockData';
 import FileManager from '@/components/files/FileManager';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { supabase } from '@/lib/supabase';
+
+interface Project {
+  id: string
+  name: string
+  client_id: string
+  status: 'pending' | 'in_progress' | 'completed'
+  progress: number
+  budget: number
+  spent: number
+  start_date: string
+  end_date: string
+  created_at: string
+  updated_at: string
+}
+
+interface Client {
+  id: string
+  name: string
+  email: string
+  role: string
+  created_at: string
+  updated_at: string
+}
+
+interface ProjectUpdate {
+  id: string
+  project_id: string
+  title: string
+  description: string
+  created_at: string
+}
+
+interface Document {
+  id: string
+  project_id: string
+  label: string
+  type: 'contract' | 'invoice' | 'deliverable' | 'other'
+  file_path: string
+  file_size?: number
+  mime_type?: string
+  created_at: string
+}
 
 export default function ClientPage() {
-  // Pour la page client, utilisons un client par défaut (Jean Dupont)
-  const [currentUser, setCurrentUser] = useState(() => {
-    const user = getCurrentUserDynamic();
-    // Si l'utilisateur actuel n'est pas un client, utiliser le premier client disponible
-    if (user.role !== 'client') {
-      return { id: 'client-1', email: 'client@ecotp-demo.com', name: 'Jean Dupont', role: 'client' as const, created_at: '2024-01-02T00:00:00Z' };
-    }
-    return user;
-  });
+  const [currentUser, setCurrentUser] = useState<Client | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projectUpdates, setProjectUpdates] = useState<ProjectUpdate[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [loading, setLoading] = useState(true);
 
-  // Filtrer les projets pour l'utilisateur actuel
-  const userProjects = mockProjects.filter(project => 
-    project.client_id === currentUser.id
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Récupérer l'utilisateur actuel
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Récupérer le profil de l'utilisateur
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
 
-  // Filtrer les mises à jour pour les projets de l'utilisateur
-  const userUpdates = mockProjectUpdates.filter(update => 
-    userProjects.some(project => project.id === update.project_id)
-  );
+          if (profile) {
+            setCurrentUser(profile);
+            
+            // Récupérer tous les clients et projets
+            const [clientsResponse, projectsResponse] = await Promise.all([
+              supabase.from('profiles').select('*').eq('role', 'client'),
+              supabase.from('projects').select('*')
+            ]);
 
-  // Filtrer les documents pour les projets de l'utilisateur
-  const userDocuments = mockDocuments.filter(doc => 
-    userProjects.some(project => project.id === doc.project_id)
-  );
+            if (clientsResponse.data) setClients(clientsResponse.data);
+            if (projectsResponse.data) setProjects(projectsResponse.data);
 
-  const totalBudget = userProjects.reduce((sum, project) => sum + project.budget, 0);
-  const avgProgress = userProjects.length > 0 ? Math.round(userProjects.reduce((sum, project) => sum + project.progress, 0) / userProjects.length) : 0;
+            // Si l'utilisateur est un client, filtrer ses projets
+            if (profile.role === 'client') {
+              const userProjects = projectsResponse.data?.filter(p => p.client_id === profile.id) || [];
+              setProjects(userProjects);
+            }
+          }
+        } else {
+          // Si pas d'utilisateur connecté, utiliser le premier client disponible pour la démo
+          const { data: clientsData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'client')
+            .limit(1);
+
+          if (clientsData && clientsData.length > 0) {
+            setCurrentUser(clientsData[0]);
+            
+            const { data: projectsData } = await supabase
+              .from('projects')
+              .select('*')
+              .eq('client_id', clientsData[0].id);
+
+            if (projectsData) setProjects(projectsData);
+          } else {
+            // Données fictives si aucun client n'est trouvé
+            const fallbackUser = {
+              id: 'client-demo',
+              name: 'Client Démo',
+              email: 'demo@client.com',
+              role: 'client',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            setCurrentUser(fallbackUser);
+          }
+        }
+
+        // Ajouter des données fictives si aucun projet n'est trouvé
+        if (projects.length === 0) {
+          const fallbackProjects = [
+            {
+              id: 'proj-demo-1',
+              name: 'Terrassement Villa Moderne',
+              client_id: currentUser?.id || 'client-demo',
+              status: 'in_progress' as const,
+              progress: 65,
+              budget: 25000,
+              spent: 16250,
+              start_date: '2024-01-15',
+              end_date: '2024-03-15',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            {
+              id: 'proj-demo-2',
+              name: 'Aménagement Paysager',
+              client_id: currentUser?.id || 'client-demo',
+              status: 'pending' as const,
+              progress: 15,
+              budget: 18000,
+              spent: 2700,
+              start_date: '2024-02-01',
+              end_date: '2024-04-01',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ];
+          setProjects(fallbackProjects);
+        }
+
+        // Ajouter des mises à jour fictives si aucune n'est trouvée
+        if (projectUpdates.length === 0) {
+          const fallbackUpdates = [
+            {
+              id: 'update-1',
+              project_id: 'proj-demo-1',
+              title: 'Début des travaux de terrassement',
+              description: 'Les équipes ont commencé les travaux de préparation du terrain. Tout se déroule selon le planning prévu.',
+              created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+              id: 'update-2',
+              project_id: 'proj-demo-1',
+              title: 'Avancement des travaux',
+              description: 'Les travaux de terrassement sont à 65% d\'avancement. La météo favorable nous permet de respecter les délais.',
+              created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+            }
+          ];
+          setProjectUpdates(fallbackUpdates);
+        }
+
+        // Ajouter des documents fictifs si aucun n'est trouvé
+        if (documents.length === 0) {
+          const fallbackDocs = [
+            {
+              id: 'doc-demo-1',
+              project_id: 'proj-demo-1',
+              label: 'Contrat de terrassement',
+              type: 'contract' as const,
+              file_path: '/documents/contrat-terrassement.pdf',
+              file_size: 2048000,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 'doc-demo-2',
+              project_id: 'proj-demo-1',
+              label: 'Facture matériaux',
+              type: 'invoice' as const,
+              file_path: '/documents/facture-materiaux.pdf',
+              file_size: 1024000,
+              created_at: new Date().toISOString()
+            }
+          ];
+          setDocuments(fallbackDocs);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        // En cas d'erreur, utiliser des données fictives complètes
+        const fallbackUser = {
+          id: 'client-demo',
+          name: 'Client Démo',
+          email: 'demo@client.com',
+          role: 'client',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        setCurrentUser(fallbackUser);
+
+        const fallbackProjects = [
+          {
+            id: 'proj-demo-1',
+            name: 'Terrassement Villa Moderne',
+            client_id: 'client-demo',
+            status: 'in_progress' as const,
+            progress: 65,
+            budget: 25000,
+            spent: 16250,
+            start_date: '2024-01-15',
+            end_date: '2024-03-15',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ];
+        setProjects(fallbackProjects);
+
+        const fallbackUpdates = [
+          {
+            id: 'update-1',
+            project_id: 'proj-demo-1',
+            title: 'Début des travaux',
+            description: 'Les travaux ont commencé selon le planning prévu.',
+            created_at: new Date().toISOString()
+          }
+        ];
+        setProjectUpdates(fallbackUpdates);
+
+        const fallbackDocs = [
+           {
+             id: 'doc-demo-1',
+             project_id: 'proj-demo-1',
+             label: 'Contrat de terrassement',
+             type: 'contract' as const,
+             file_path: '/documents/contrat.pdf',
+             file_size: 2048000,
+             created_at: new Date().toISOString()
+           }
+         ];
+         setDocuments(fallbackDocs);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const userProjects = projects;
+  const totalBudget = userProjects.reduce((sum: number, project: Project) => sum + project.budget, 0);
+  const avgProgress = userProjects.length > 0 ? Math.round(userProjects.reduce((sum: number, project: Project) => sum + project.progress, 0) / userProjects.length) : 0;
   
   // Calculer les statistiques
   const stats = {
@@ -69,12 +296,6 @@ export default function ClientPage() {
     }
   ]
 
-  // Charger les données du client actuel
-  useEffect(() => {
-    const user = getCurrentUserDynamic();
-    setCurrentUser(user);
-  }, []);
-
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'pending': return 'En attente'
@@ -93,9 +314,21 @@ export default function ClientPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Chargement des données...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (selectedProject) {
-    const projectUpdates = getProjectUpdatesByProjectId(selectedProject.id)
-    const projectDocs = getDocumentsByProjectId(selectedProject.id)
+    // Pour l'instant, pas de mises à jour de projet ni de documents spécifiques
+    const projectUpdates: ProjectUpdate[] = []
+    const projectDocs: Document[] = []
     
     return (
       <div className="min-h-screen bg-gray-50">
@@ -173,7 +406,7 @@ export default function ClientPage() {
                     {projectUpdates.length > 0 ? projectUpdates.map((update) => (
                       <div key={update.id} className="border-l-4 border-blue-500 pl-4">
                         <h4 className="font-medium text-gray-900">{update.title}</h4>
-                        <p className="text-sm text-gray-600 mt-1">{update.body}</p>
+                        <p className="text-sm text-gray-600 mt-1">{update.description}</p>
                         <p className="text-xs text-gray-400 mt-2">
                           {new Date(update.created_at).toLocaleDateString('fr-FR', {
                             year: 'numeric',
@@ -203,7 +436,7 @@ export default function ClientPage() {
                           <div>
                             <p className="text-sm font-medium text-gray-900">{doc.label}</p>
                             <p className="text-xs text-gray-500">
-                              {doc.type} • {(doc.file_size / 1024).toFixed(1)} KB
+                              {doc.type} • {doc.file_size ? (doc.file_size / 1024).toFixed(1) + ' KB' : 'Taille inconnue'}
                             </p>
                           </div>
                         </div>
@@ -238,7 +471,7 @@ export default function ClientPage() {
               </div>
               <div className="ml-4">
                 <h1 className="text-2xl font-bold text-gray-900">EcoTP</h1>
-                <p className="text-sm text-gray-500">Espace Client - {currentUser.name}</p>
+                <p className="text-sm text-gray-500">Espace Client - {currentUser?.name || 'Utilisateur'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -306,7 +539,7 @@ export default function ClientPage() {
                   Mode MVP - Vue Client
                 </h3>
                 <div className="mt-2 text-sm text-blue-700">
-                  <p>Vous consultez l'espace client avec les données de: <strong>{currentUser.name}</strong></p>
+                  <p>Vous consultez l'espace client avec les données de: <strong>{currentUser?.name || 'Utilisateur'}</strong></p>
                   <p>Retournez à l'accueil pour changer d'utilisateur de test.</p>
                 </div>
               </div>
@@ -412,13 +645,13 @@ export default function ClientPage() {
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Dernières mises à jour</h3>
                 <div className="space-y-4 max-h-64 overflow-y-auto">
-                  {userUpdates.length > 0 ? userUpdates.map((update) => {
+                  {projectUpdates.length > 0 ? projectUpdates.map((update) => {
                     const project = userProjects.find(p => p.id === update.project_id)
                     return (
                       <div key={update.id} className="border-l-4 border-blue-500 pl-4">
                         <h4 className="font-medium text-gray-900">{update.title}</h4>
                         <p className="text-xs text-blue-600 mb-1">{project?.name}</p>
-                        <p className="text-sm text-gray-600">{update.body.substring(0, 100)}...</p>
+                        <p className="text-sm text-gray-600">{update.description.substring(0, 100)}...</p>
                         <p className="text-xs text-gray-400 mt-2">
                           {new Date(update.created_at).toLocaleDateString('fr-FR')}
                         </p>

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ModernLayout from '@/components/layout/ModernLayout'
+import NewProjectModal from '@/components/admin/NewProjectModal'
 import { Plus, Search, Filter, MoreVertical, Calendar, DollarSign, TrendingUp, CheckCircle, Clock, AlertCircle } from 'lucide-react'
-import { getAllProjects, getAllClients } from '@/lib/mockData'
 
 interface Project {
   id: string
@@ -16,13 +16,21 @@ interface Project {
   spent: number
   start_date: string
   end_date: string
-  description?: string
+  created_at: string
+  updated_at: string
+  profiles?: {
+    name: string
+    email: string
+  }
 }
 
 interface Client {
   id: string
   name: string
   email: string
+  role: string
+  created_at: string
+  updated_at: string
 }
 
 export default function AdminProjectsPage() {
@@ -34,8 +42,32 @@ export default function AdminProjectsPage() {
   const [showNewProjectModal, setShowNewProjectModal] = useState(false)
 
   useEffect(() => {
-    setProjects(getAllProjects())
-    setClients(getAllClients())
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('/api/projects')
+        if (response.ok) {
+          const projectsData = await response.json()
+          setProjects(projectsData)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des projets:', error)
+      }
+    }
+
+    const fetchClients = async () => {
+      try {
+        const response = await fetch('/api/clients')
+        if (response.ok) {
+          const clientsData = await response.json()
+          setClients(clientsData)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des clients:', error)
+      }
+    }
+
+    fetchProjects()
+    fetchClients()
   }, [])
 
   const filteredProjects = projects.filter(project => {
@@ -46,8 +78,13 @@ export default function AdminProjectsPage() {
     return matchesSearch && matchesStatus
   })
 
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId)
+  const getClientName = (project: Project) => {
+    // Utiliser les données de la relation Supabase si disponibles
+    if (project.profiles?.name) {
+      return project.profiles.name
+    }
+    // Sinon, chercher dans la liste des clients
+    const client = clients.find(c => c.id === project.client_id)
     return client?.name || 'Client inconnu'
   }
 
@@ -204,7 +241,7 @@ export default function AdminProjectsPage() {
                         </div>
                         <div>
                           <h4 className="text-xl font-bold text-gray-900 mb-1">{project.name}</h4>
-                          <p className="text-gray-600 mb-2">Client: {getClientName(project.client_id)}</p>
+                          <p className="text-gray-600 mb-2">Client: {getClientName(project)}</p>
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span>Budget: {project.budget.toLocaleString('fr-FR')}€</span>
                             <span>Dépensé: {project.spent.toLocaleString('fr-FR')}€</span>
@@ -275,6 +312,24 @@ export default function AdminProjectsPage() {
           </div>
         </div>
       </div>
+
+      <NewProjectModal
+        isOpen={showNewProjectModal}
+        onClose={() => setShowNewProjectModal(false)}
+        onProjectCreated={async () => {
+          setShowNewProjectModal(false)
+          // Rafraîchir la liste des projets
+          try {
+            const response = await fetch('/api/projects')
+            if (response.ok) {
+              const projectsData = await response.json()
+              setProjects(projectsData)
+            }
+          } catch (error) {
+            console.error('Erreur lors du rafraîchissement des projets:', error)
+          }
+        }}
+      />
     </ModernLayout>
   )
 }

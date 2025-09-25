@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import ModernLayout from '@/components/layout/ModernLayout'
+import NewClientModal from '@/components/admin/NewClientModal'
 import { Plus, Search, Filter, MoreVertical, Target, DollarSign, TrendingUp, CheckCircle, Mail, Phone, MapPin } from 'lucide-react'
-import { getAllClients, getAllProjects } from '@/lib/mockData'
-
 interface Client {
   id: string
   name: string
@@ -13,8 +12,9 @@ interface Client {
   phone?: string
   company?: string
   address?: string
+  role: string
   created_at: string
-  status: 'active' | 'inactive'
+  updated_at: string
 }
 
 interface Project {
@@ -34,32 +34,42 @@ export default function AdminClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
   const [showNewClientModal, setShowNewClientModal] = useState(false)
 
   useEffect(() => {
-    // Transformer les Profile en Client avec les propriétés attendues
-    const profiles = getAllClients()
-    const transformedClients: Client[] = profiles.map(profile => ({
-      id: profile.id,
-      name: profile.name,
-      email: profile.email || `${profile.name.toLowerCase().replace(' ', '.')}@email.com`,
-      phone: '+33 1 23 45 67 89', // Valeur par défaut
-      company: 'Non spécifiée', // Valeur par défaut car non présente dans Profile
-      address: 'Paris, France', // Valeur par défaut
-      created_at: profile.created_at,
-      status: 'active' as const // Statut par défaut
-    }))
-    
-    setClients(transformedClients)
-    setProjects(getAllProjects())
+    const fetchClients = async () => {
+      try {
+        const response = await fetch('/api/clients')
+        if (response.ok) {
+          const clientsData = await response.json()
+          setClients(clientsData)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des clients:', error)
+      }
+    }
+
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('/api/projects')
+        if (response.ok) {
+          const projectsData = await response.json()
+          setProjects(projectsData)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des projets:', error)
+      }
+    }
+
+    fetchClients()
+    fetchProjects()
   }, [])
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || client.status === statusFilter
-    return matchesSearch && matchesStatus
+                         client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (client.company && client.company.toLowerCase().includes(searchTerm.toLowerCase()))
+    return matchesSearch
   })
 
   const getClientStats = (clientId: string) => {
@@ -159,15 +169,7 @@ export default function AdminClientsPage() {
                       className="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                  <select 
-                    value={statusFilter} 
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">Tous les statuts</option>
-                    <option value="active">Actifs</option>
-                    <option value="inactive">Inactifs</option>
-                  </select>
+
                   <button 
                     onClick={() => setShowNewClientModal(true)}
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
@@ -209,12 +211,8 @@ export default function AdminClientsPage() {
                               )}
                             </div>
                             <div className="flex items-center space-x-4 mt-2">
-                              <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                                client.status === 'active' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {client.status === 'active' ? 'Actif' : 'Inactif'}
+                              <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                                Client
                               </span>
                               <span className="text-sm text-gray-500">
                                 Membre depuis {new Date(client.created_at).getFullYear()}
@@ -266,6 +264,27 @@ export default function AdminClientsPage() {
           </div>
         </div>
       </div>
+
+      <NewClientModal
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onClientCreated={() => {
+          setShowNewClientModal(false)
+          // Rafraîchir la liste des clients
+          const fetchClients = async () => {
+            try {
+              const response = await fetch('/api/clients')
+              if (response.ok) {
+                const clientsData = await response.json()
+                setClients(clientsData)
+              }
+            } catch (error) {
+              console.error('Erreur lors du rafraîchissement des clients:', error)
+            }
+          }
+          fetchClients()
+        }}
+      />
     </ModernLayout>
   )
 }
