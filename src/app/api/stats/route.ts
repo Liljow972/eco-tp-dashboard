@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     // Vérifier l'authentification
     const { data: { user }, error: authError } = await supabase.auth.getUser()
