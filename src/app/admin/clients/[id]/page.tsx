@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, DollarSign, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, DollarSign, TrendingUp, Upload, FileText } from 'lucide-react';
 import { getAllClients, getAllProjects } from '@/lib/mockData';
+import DocumentUpload from '@/components/documents/DocumentUpload';
+import DocumentList from '@/components/documents/DocumentList';
 
 interface Client {
   id: string;
@@ -24,6 +26,8 @@ export default function ClientDetails() {
   const [client, setClient] = useState<Client | null>(null);
   const [clientProjects, setClientProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUpload, setShowUpload] = useState(false);
+  const [documentsKey, setDocumentsKey] = useState(0);
 
   useEffect(() => {
     const fetchClientData = async () => {
@@ -63,6 +67,11 @@ export default function ClientDetails() {
 
     fetchClientData();
   }, [params.id]);
+
+  const handleUploadComplete = () => {
+    setDocumentsKey(prev => prev + 1); // Force le refresh de DocumentList
+    setShowUpload(false);
+  };
 
   if (loading) {
     return (
@@ -217,6 +226,39 @@ export default function ClientDetails() {
               ) : (
                 <p className="text-gray-500 text-center py-8">Aucun projet trouvé pour ce client.</p>
               )}
+            </div>
+
+            {/* Documents du client */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+                  <FileText className="w-5 h-5" />
+                  <span>Documents du client</span>
+                </h2>
+                <button
+                  onClick={() => setShowUpload(!showUpload)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{showUpload ? 'Annuler' : 'Ajouter des documents'}</span>
+                </button>
+              </div>
+
+              {showUpload && (
+                <div className="mb-6">
+                  <DocumentUpload
+                    clientId={client.id}
+                    onUploadComplete={handleUploadComplete}
+                    className="border-t pt-4"
+                  />
+                </div>
+              )}
+
+              <DocumentList
+                key={documentsKey}
+                clientId={client.id}
+                onDocumentDeleted={() => setDocumentsKey(prev => prev + 1)}
+              />
             </div>
           </div>
 

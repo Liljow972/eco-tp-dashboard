@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, User, MapPin, DollarSign, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, User, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, FileText, Upload } from 'lucide-react';
 import { getAllProjects } from '@/lib/mockData';
+import DocumentUpload from '@/components/documents/DocumentUpload';
+import DocumentList from '@/components/documents/DocumentList';
 
 interface Project {
   id: string;
   name: string;
   client: string;
+  client_id: string;
   status: 'En cours' | 'Terminé' | 'En attente' | 'Annulé';
   progress: number;
   budget: number;
@@ -30,6 +33,8 @@ export default function ProjectDetails() {
   const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showUpload, setShowUpload] = useState(false);
+  const [documentsKey, setDocumentsKey] = useState(0);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -43,6 +48,7 @@ export default function ProjectDetails() {
             id: foundProject.id,
             name: foundProject.name,
             client: 'Client par défaut', // Transformation nécessaire car mockData utilise client_id
+            client_id: foundProject.client_id,
             status: foundProject.status === 'in_progress' ? 'En cours' : 
                    foundProject.status === 'completed' ? 'Terminé' : 
                    foundProject.status === 'pending' ? 'En attente' : 'Annulé',
@@ -72,6 +78,11 @@ export default function ProjectDetails() {
 
     fetchProject();
   }, [params.id]);
+
+  const handleUploadComplete = () => {
+    setDocumentsKey(prev => prev + 1); // Force le refresh de DocumentList
+    setShowUpload(false);
+  };
 
   if (loading) {
     return (
@@ -183,6 +194,41 @@ export default function ProjectDetails() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Documents du projet */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+                  <FileText className="w-5 h-5" />
+                  <span>Documents du projet</span>
+                </h2>
+                <button
+                  onClick={() => setShowUpload(!showUpload)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{showUpload ? 'Annuler' : 'Ajouter des documents'}</span>
+                </button>
+              </div>
+
+              {showUpload && (
+                <div className="mb-6">
+                  <DocumentUpload
+                    clientId={project.client_id}
+                    projectId={project.id}
+                    onUploadComplete={handleUploadComplete}
+                    className="border-t pt-4"
+                  />
+                </div>
+              )}
+
+              <DocumentList
+                key={documentsKey}
+                clientId={project.client_id}
+                projectId={project.id}
+                onDocumentDeleted={() => setDocumentsKey(prev => prev + 1)}
+              />
             </div>
           </div>
 
