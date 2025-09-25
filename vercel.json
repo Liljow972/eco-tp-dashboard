@@ -2,9 +2,5 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm ci",
-  "env": {
-    "NODE_ENV": "production",
-    "NEXT_PUBLIC_SITE_URL": "https://eco-tp-dashboard-git-master-lj-designs-projects.vercel.app"
-  }
+  "installCommand": "npm ci"
 }
