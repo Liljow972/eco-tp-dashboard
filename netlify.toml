@@ -1,0 +1,32 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirections pour les routes dynamiques
+[[redirects]]
+  from = "/admin/clients/:id"
+  to = "/admin/clients/[id]"
+  status = 200
+
+[[redirects]]
+  from = "/admin/projects/:id"
+  to = "/admin/projects/[id]"
+  status = 200
+
+# Redirection pour les routes API vers les fonctions Netlify
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Redirection par défaut pour SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
