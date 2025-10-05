@@ -75,7 +75,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setActiveTab('overview')}
             className={`px-4 py-2 rounded-lg text-sm ${activeTab === 'overview' ? 'bg-ecotp-green text-white' : 'bg-ecotp-white text-black'} border border-ecotp-gray-200`}
@@ -93,7 +93,7 @@ export default function DashboardPage() {
         {activeTab === 'overview' && (
         <>
         {/* KPI */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Projets actifs', value: 12 },
             { label: 'Tâches en cours', value: 28 },
@@ -108,7 +108,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Suivi des projets & Fichiers récents */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="bg-ecotp-white" title="Suivi des projets">
             <div className="h-40 md:h-56 rounded border border-ecotp-gray-200 flex items-center justify-center text-black/60">
               Graphiques et progression (placeholder)
@@ -135,7 +135,7 @@ export default function DashboardPage() {
         </div>
         {/* Filtres + Aperçu table projets pour ressembler au visuel */}
         <Card className="bg-ecotp-white" title="Filtres">
-          <div className="grid sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="text-black font-medium">Statut</label>
               <select className="mt-1 w-full border border-ecotp-gray-200 rounded px-3 py-2">

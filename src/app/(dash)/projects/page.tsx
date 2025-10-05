@@ -47,7 +47,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6">
       <Card className="bg-ecotp-white" title="Filtres">
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <label htmlFor="status" className="text-black font-medium">Statut</label>
             <select id="status" className="mt-1 w-full border border-ecotp-gray-200 rounded px-3 py-2" value={status} onChange={(e) => setStatus(e.target.value as any)}>

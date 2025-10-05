@@ -1,16 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, Users, LogOut, Bell, User as UserIcon } from 'lucide-react'
+import { Search, Users, LogOut, Bell, User as UserIcon, Menu } from 'lucide-react'
 import { AuthService } from '@/lib/auth'
 import { getClients } from '@/lib/mock'
 
-export default function Header() {
+export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [clients, setClients] = useState<{ id: string; name: string }[]>([])
   const [currentClient, setCurrentClient] = useState<string>('')
   const [currentUserName, setCurrentUserName] = useState<string>('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [notifyOpen, setNotifyOpen] = useState(false)
 
   useEffect(() => {
     const user = AuthService.getCurrentUser()
@@ -25,7 +27,7 @@ export default function Header() {
   }, [])
 
   return (
-    <header className="ml-64">
+    <header className="md:ml-64 ml-0">
       {/** Utilise un proxy same-origin pour éviter ORB sur certains navigateurs/extensions */}
       {/** Note: l’URL est encodée pour la query-string */}
       {(() => {
@@ -40,23 +42,56 @@ export default function Header() {
             }}
             aria-label="Bandeau chantier écologique"
           >
-            <div className="absolute inset-0 bg-ecotp-green/60" />
-            <div className="relative h-full px-6 flex items-center justify-between">
-              <h1 className="text-ecotp-white text-xl sm:text-2xl font-semibold">
-                Eco TP Dashboard
-              </h1>
-              <div className="flex items-center gap-3">
-                <label className="sr-only" htmlFor="search">Rechercher</label>
-                <div className="flex items-center bg-ecotp-white/95 rounded-md px-2 py-1">
-                  <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
-                  <input
-                    id="search"
-                    className="ml-2 bg-transparent placeholder-black/70 text-black outline-none w-40 sm:w-56"
-                    placeholder="Rechercher..."
-                  />
+            <div className="absolute inset-0 bg-ecotp-green/60 pointer-events-none" />
+            <div className="relative z-10 h-full px-0 sm:px-6 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="md:hidden p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white relative z-20"
+                  onMouseDown={() => onToggleSidebar && onToggleSidebar()}
+                  aria-label="Ouvrir le menu"
+                >
+                  <Menu className="h-5 w-5 text-ecotp-green" aria-hidden />
+                </button>
+                <h1 className="text-ecotp-white text-base sm:text-2xl font-semibold">
+                  Eco TP Dashboard
+                </h1>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                {/* Mobile search icon */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="sm:hidden p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white"
+                    aria-label="Ouvrir la recherche"
+                    onClick={() => setSearchOpen((o) => !o)}
+                  >
+                    <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
+                  </button>
+                  {/* Desktop search input */}
+                  <div className="hidden sm:flex items-center bg-ecotp-white/95 rounded-md px-2 py-1">
+                    <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
+                    <input
+                      id="search"
+                      className="ml-2 bg-transparent placeholder-black/70 text-black outline-none w-56"
+                      placeholder="Rechercher..."
+                    />
+                  </div>
                 </div>
+                {/* Mobile search overlay */}
+                {searchOpen && (
+                  <div className="sm:hidden fixed left-0 top-0 z-50 w-full bg-ecotp-white px-3 py-2 shadow flex items-center gap-2">
+                    <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
+                    <input
+                      autoFocus
+                      className="flex-1 bg-transparent placeholder-black/70 text-black outline-none"
+                      placeholder="Rechercher..."
+                    />
+                    <button type="button" className="px-3 py-1 rounded bg-ecotp-green text-white" onClick={() => setSearchOpen(false)}>Fermer</button>
+                  </div>
+                )}
                 {isAdmin && (
-                  <div className="flex items-center bg-ecotp-white/95 rounded-md px-2 py-1">
+                  <div className="hidden sm:flex items-center bg-ecotp-white/95 rounded-md px-2 py-1">
                     <Users className="h-4 w-4 text-ecotp-green" aria-hidden />
                     <label className="sr-only" htmlFor="client-select">Sélecteur de client</label>
                     <select
@@ -74,12 +109,27 @@ export default function Header() {
                   </div>
                 )}
                 {/* Notifications */}
-                <button
-                  className="p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white"
-                  title="Notifications"
-                >
-                  <Bell className="h-4 w-4 text-ecotp-green" aria-hidden />
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="hidden min-[360px]:inline-flex p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white"
+                    title="Notifications"
+                    onClick={() => setNotifyOpen((o) => !o)}
+                  >
+                    <Bell className="h-4 w-4 text-ecotp-green" aria-hidden />
+                  </button>
+                  {notifyOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-ecotp-gray-200 z-50">
+                      <div className="px-3 py-2 text-sm text-black/80 border-b border-ecotp-gray-100">Notifications</div>
+                      <ul className="max-h-48 overflow-y-auto">
+                        <li className="px-3 py-2 text-sm text-black hover:bg-ecotp-gray-100">Nouveau document partagé</li>
+                        <li className="px-3 py-2 text-sm text-black hover:bg-ecotp-gray-100">Tâche planifiée demain</li>
+                        <li className="px-3 py-2 text-sm text-black hover:bg-ecotp-gray-100">Projet mis à jour</li>
+                      </ul>
+                      <div className="px-3 py-2"><button type="button" className="text-ecotp-green text-sm" onClick={() => setNotifyOpen(false)}>Fermer</button></div>
+                    </div>
+                  )}
+                </div>
                 {/* User menu (Profil, Déconnexion) */}
                 <div className="relative">
                   <button
@@ -92,7 +142,7 @@ export default function Header() {
                       {(currentUserName?.[0] || (isAdmin ? 'A' : 'C')).toUpperCase()}
                     </div>
                     <span className="hidden sm:inline text-sm text-black/80">{currentUserName || (isAdmin ? 'Admin' : 'Client')}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${isAdmin ? 'bg-ecotp-green/15 text-ecotp-green' : 'bg-black/10 text-black/70'}`}>{isAdmin ? 'Admin' : 'Client'}</span>
+                    <span className={`hidden min-[360px]:inline text-xs px-2 py-0.5 rounded-full ${isAdmin ? 'bg-ecotp-green/15 text-ecotp-green' : 'bg-black/10 text-black/70'}`}>{isAdmin ? 'Admin' : 'Client'}</span>
                   </button>
                   {menuOpen && (
                     <div className="user-menu-dropdown absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-ecotp-gray-200 z-50">
