@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
 import { ReactNode, useEffect } from 'react';
 import Link from 'next/link';
+import NextImage from 'next/image';
 import { usePathname } from 'next/navigation';
 import { 
   Home, Users, BarChart3, Settings, Bell, Search, User, 
@@ -128,8 +129,8 @@ export default function ModernLayout({
             <div className="flex items-center space-x-6">
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
-                <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-xl">E</span>
+                <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center shadow-lg bg-white">
+                  <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo EcoTP" width={48} height={48} priority />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">EcoTP</h1>
@@ -367,9 +368,7 @@ export default function ModernLayout({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">E</span>
-                </div>
+                <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo EcoTP" width={40} height={40} className="rounded-xl" priority />
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">EcoTP</h3>
                   <p className="text-sm text-gray-600">Terrassement Écologique</p>

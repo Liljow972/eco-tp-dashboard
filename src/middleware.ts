@@ -3,7 +3,16 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  // Pour le MVP, on laisse passer toutes les requêtes sans vérification
+  // Redirection propre des anciennes routes vers le dashboard unifié
+  const url = req.nextUrl.clone()
+  const { pathname } = req.nextUrl
+
+  if (pathname === '/admin' || pathname === '/client') {
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  // Pour le MVP, on laisse passer toutes les autres requêtes
   return NextResponse.next()
 }
 

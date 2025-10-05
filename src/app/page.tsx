@@ -9,10 +9,15 @@ export default function LandingPage() {
       <header className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {/* Logo: remplacé par votre PNG quand disponible */}
-            <div className="w-10 h-10 rounded-lg bg-ecotp-green flex items-center justify-center">
-              <span className="text-white font-bold">E</span>
-            </div>
+            {/* Logo PNG fourni */}
+            <Image
+              src="/LOGO_ECO_TP-05.png"
+              alt="Logo EcoTP"
+              width={40}
+              height={40}
+              className="rounded-lg"
+              priority
+            />
             <span className="text-xl font-semibold text-gray-900">EcoTP Dashboard</span>
           </div>
           <nav className="flex items-center space-x-6">

@@ -31,6 +31,30 @@ const nextConfig = {
   },
   // Forcer le mode serveur (pas d'export statique)
   output: undefined,
+  async redirects() {
+    return [
+      {
+        source: '/admin',
+        destination: '/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/admin/',
+        destination: '/dashboard/',
+        permanent: false,
+      },
+      {
+        source: '/client',
+        destination: '/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/client/',
+        destination: '/dashboard/',
+        permanent: false,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

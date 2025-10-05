@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, Users, LogOut, Bell, User as UserIcon, Menu } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Search, Users, LogOut, Bell, User as UserIcon, Menu, Home } from 'lucide-react'
 import { AuthService } from '@/lib/auth'
 import { getClients } from '@/lib/mock'
 
@@ -13,6 +16,11 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [notifyOpen, setNotifyOpen] = useState(false)
+  const router = useRouter()
+  // Logo: configurable via NEXT_PUBLIC_APP_LOGO, puis /logo.svg, /logo.png, fallback
+  const initialLogo = process.env.NEXT_PUBLIC_APP_LOGO || '/logo.svg'
+  const [logoSrc, setLogoSrc] = useState<string>(initialLogo)
+  const [logoTriedPng, setLogoTriedPng] = useState(false)
 
   useEffect(() => {
     const user = AuthService.getCurrentUser()
@@ -25,6 +33,21 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
       })
     }
   }, [])
+
+  // Handlers dépendants de l'état et du router (doivent être dans le composant)
+  const handleLogoError = () => {
+    if (!logoTriedPng) {
+      setLogoTriedPng(true)
+      setLogoSrc('/logo.png')
+    } else {
+      setLogoSrc('/logo-ecotp.svg')
+    }
+  }
+
+  const handleSignOut = async () => {
+    await AuthService.signOut()
+    router.push('/')
+  }
 
   return (
     <header className="md:ml-64 ml-0">
@@ -53,43 +76,37 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
                 >
                   <Menu className="h-5 w-5 text-ecotp-green" aria-hidden />
                 </button>
-                <h1 className="text-ecotp-white text-base sm:text-2xl font-semibold">
-                  Eco TP Dashboard
-                </h1>
+                {/* Logo retiré du header pour épurer l’UI du dashboard */}
               </div>
               <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                {/* Mobile search icon */}
+                {/* Icône de recherche (ouvre un champ au clic) */}
                 <div className="relative">
                   <button
                     type="button"
-                    className="sm:hidden p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white"
+                    className="p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white"
                     aria-label="Ouvrir la recherche"
                     onClick={() => setSearchOpen((o) => !o)}
                   >
                     <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
                   </button>
-                  {/* Desktop search input */}
-                  <div className="hidden sm:flex items-center bg-ecotp-white/95 rounded-md px-2 py-1">
-                    <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
-                    <input
-                      id="search"
-                      className="ml-2 bg-transparent placeholder-black/70 text-black outline-none w-56"
-                      placeholder="Rechercher..."
-                    />
-                  </div>
+                  {/* Popover de recherche */}
+                  {searchOpen && (
+                    <div className="absolute left-0 mt-2 w-72 bg-white rounded-md shadow-lg border border-ecotp-gray-200 z-50 p-2 flex items-center gap-2">
+                      <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
+                      <input
+                        autoFocus
+                        id="search"
+                        className="flex-1 bg-transparent placeholder-black/70 text-black outline-none"
+                        placeholder="Rechercher..."
+                      />
+                      <button
+                        type="button"
+                        className="px-2 py-1 rounded bg-ecotp-green text-white"
+                        onClick={() => setSearchOpen(false)}
+                      >Fermer</button>
+                    </div>
+                  )}
                 </div>
-                {/* Mobile search overlay */}
-                {searchOpen && (
-                  <div className="sm:hidden fixed left-0 top-0 z-50 w-full bg-ecotp-white px-3 py-2 shadow flex items-center gap-2">
-                    <Search className="h-4 w-4 text-ecotp-green" aria-hidden />
-                    <input
-                      autoFocus
-                      className="flex-1 bg-transparent placeholder-black/70 text-black outline-none"
-                      placeholder="Rechercher..."
-                    />
-                    <button type="button" className="px-3 py-1 rounded bg-ecotp-green text-white" onClick={() => setSearchOpen(false)}>Fermer</button>
-                  </div>
-                )}
                 {isAdmin && (
                   <div className="hidden sm:flex items-center bg-ecotp-white/95 rounded-md px-2 py-1">
                     <Users className="h-4 w-4 text-ecotp-green" aria-hidden />
@@ -130,6 +147,23 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
                     </div>
                   )}
                 </div>
+                {/* Accueil */}
+                <Link
+                  href="/"
+                  className="inline-flex p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white"
+                  title="Accueil"
+                >
+                  <Home className="h-4 w-4 text-ecotp-green" aria-hidden />
+                </Link>
+                {/* Déconnexion directe */}
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex p-2 rounded-md bg-ecotp-white/95 hover:bg-ecotp-white"
+                  title="Se déconnecter"
+                >
+                  <LogOut className="h-4 w-4 text-ecotp-green" aria-hidden />
+                </button>
                 {/* User menu (Profil, Déconnexion) */}
                 <div className="relative">
                   <button
