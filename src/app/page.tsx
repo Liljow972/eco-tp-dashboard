@@ -34,23 +34,81 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Bloc login/inscription rapide */}
+      {/* Section chiffres (statistiques synthétiques) */}
       <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="border rounded-xl p-6 bg-white shadow-sm">
-            <h2 className="text-2xl font-semibold text-gray-900">Connexion</h2>
-            <p className="text-gray-600">Accédez à votre espace client ou admin.</p>
-            <div className="mt-6 flex gap-3">
-              <Link href="/auth/login" className="px-4 py-2 bg-ecotp-green text-white rounded lg:hover:bg-emerald-700">Se connecter</Link>
-              <Link href="/auth/login" className="px-4 py-2 bg-gray-900 text-white rounded">Démo rapide</Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Carte: Projets Écologiques */}
+          <div className="relative rounded-2xl bg-white shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">🌱</div>
+              <div>
+                <div className="text-2xl font-semibold text-gray-900">24</div>
+                <div className="text-sm text-gray-600">Projets Écologiques</div>
+              </div>
             </div>
+            <span className="absolute right-4 top-4 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+12%</span>
           </div>
-          <div className="border rounded-xl p-6 bg-white shadow-sm">
-            <h2 className="text-2xl font-semibold text-gray-900">Inscription</h2>
-            <p className="text-gray-600">Créez votre compte pour démarrer.</p>
-            <div className="mt-6">
-              <Link href="/register" className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100">S'inscrire</Link>
+
+          {/* Carte: Taux de Réussite */}
+          <div className="relative rounded-2xl bg-white shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">📊</div>
+              <div>
+                <div className="text-2xl font-semibold text-gray-900">89%</div>
+                <div className="text-sm text-gray-600">Taux de Réussite</div>
+              </div>
             </div>
+            <span className="absolute right-4 top-4 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">+8%</span>
+          </div>
+
+          {/* Carte: Clients Actifs */}
+          <div className="relative rounded-2xl bg-white shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">👥</div>
+              <div>
+                <div className="text-2xl font-semibold text-gray-900">156</div>
+                <div className="text-sm text-gray-600">Clients Actifs</div>
+              </div>
+            </div>
+            <span className="absolute right-4 top-4 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">+15%</span>
+          </div>
+
+          {/* Carte: Documents */}
+          <div className="relative rounded-2xl bg-white shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">📄</div>
+              <div>
+                <div className="text-2xl font-semibold text-gray-900">342</div>
+                <div className="text-sm text-gray-600">Documents</div>
+              </div>
+            </div>
+            <span className="absolute right-4 top-4 text-xs font-medium text-violet-600 bg-violet-50 px-2 py-1 rounded-full">+22%</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 blocs animés (Écologique, Suivi en temps réel, Collaboration) */}
+      <section className="max-w-7xl mx-auto px-6 pb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Écologique */}
+          <div className="group rounded-2xl bg-white border border-gray-100 shadow-sm p-8 transition-transform duration-300 hover:-translate-y-1 hover:shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mb-4">🌿</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Écologique</h3>
+            <p className="text-gray-600">Pratiques respectueuses de l'environnement pour un terrassement durable et responsable.</p>
+          </div>
+
+          {/* Suivi en temps réel */}
+          <div className="group rounded-2xl bg-white border border-gray-100 shadow-sm p-8 transition-transform duration-300 hover:-translate-y-1 hover:shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mb-4">📈</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Suivi en temps réel</h3>
+            <p className="text-gray-600">Visualisez l'avancement de vos projets avec des données actualisées en continu.</p>
+          </div>
+
+          {/* Collaboration */}
+          <div className="group rounded-2xl bg-white border border-gray-100 shadow-sm p-8 transition-transform duration-300 hover:-translate-y-1 hover:shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-amber-600 text-white flex items-center justify-center mb-4">🤝</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Collaboration</h3>
+            <p className="text-gray-600">Communication transparente et efficace entre équipes, clients et partenaires.</p>
           </div>
         </div>
       </section>
