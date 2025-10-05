@@ -1,19 +1,20 @@
-import { supabase } from '../lib/supabase';
+import 'dotenv/config'
+import { createSupabaseServiceRoleClient } from '../lib/supabase';
+
+const adminClient = createSupabaseServiceRoleClient();
 
 // Comptes de test
 const TEST_ACCOUNTS = {
   client: {
-    id: 'test-client-001',
-    email: 'client@test.com',
-    password: 'test123',
-    full_name: 'Client Test',
+    email: 'client@ecotp.test',
+    password: 'client123',
+    full_name: 'Client Démo EcoTP',
     role: 'client' as const
   },
   admin: {
-    id: 'test-admin-001', 
-    email: 'admin@test.com',
+    email: 'admin@ecotp.test',
     password: 'admin123',
-    full_name: 'Admin Test',
+    full_name: 'Admin EcoTP',
     role: 'admin' as const
   }
 };
@@ -28,7 +29,8 @@ const TEST_PROJECTS = [
     progress: 65,
     budget: 15000,
     spent: 9750,
-    client_id: 'test-client-001',
+    // Assigné après création du client
+    client_id: '',
     start_date: '2024-01-15',
     end_date: '2024-06-15'
   },
@@ -40,7 +42,7 @@ const TEST_PROJECTS = [
     progress: 100,
     budget: 8000,
     spent: 7800,
-    client_id: 'test-client-001',
+    client_id: '',
     start_date: '2023-10-01',
     end_date: '2024-01-31'
   }
@@ -50,44 +52,64 @@ async function initTestAccounts() {
   try {
     console.log('🚀 Initialisation des comptes de test...');
 
-    // Vérifier si les profils existent déjà
-    const { data: existingProfiles } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .in('email', [TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.admin.email]);
-
-    if (existingProfiles && existingProfiles.length > 0) {
-      console.log('✅ Les comptes de test existent déjà:');
-      existingProfiles.forEach(profile => {
-        console.log(`   - ${profile.email} (ID: ${profile.id})`);
-      });
-    } else {
-      // Créer les profils de test
-      const profiles = Object.values(TEST_ACCOUNTS).map(account => ({
-        id: account.id,
-        email: account.email,
-        full_name: account.full_name,
-        role: account.role,
-        created_at: new Date().toISOString()
-      }));
-
-      const { error: profileError } = await supabase
+    // Créer/assurer l'existence des utilisateurs Auth (admin + client)
+    console.log('🔐 Vérification/Création des utilisateurs Supabase Auth...');
+    const ensureUser = async (account: typeof TEST_ACCOUNTS[keyof typeof TEST_ACCOUNTS]) => {
+      // Tenter de récupérer un utilisateur par email via table profiles
+      const { data: existingProfile } = await adminClient
         .from('profiles')
-        .insert(profiles);
+        .select('id')
+        .eq('email', account.email)
+        .maybeSingle();
 
-      if (profileError) {
-        console.error('❌ Erreur lors de la création des profils:', profileError);
-        return;
+      let userId = existingProfile?.id || '';
+
+      if (!userId) {
+        const { data, error } = await adminClient.auth.admin.createUser({
+          email: account.email,
+          password: account.password,
+          email_confirm: true,
+          user_metadata: { full_name: account.full_name, role: account.role }
+        });
+
+        if (error) {
+          // Si l'utilisateur existe déjà, on tentera de le récupérer via auth.admin.listUsers
+          console.warn(`⚠️ Impossible de créer ${account.email}:`, error.message);
+          const { data: usersList } = await adminClient.auth.admin.listUsers();
+          const found = usersList?.users?.find(u => u.email === account.email);
+          if (!found) throw new Error(`Utilisateur introuvable: ${account.email}`);
+          userId = found.id;
+        } else {
+          userId = data.user?.id || '';
+        }
+
+        // Créer le profil lié si absent
+        if (userId) {
+          const { error: profileErr } = await adminClient
+            .from('profiles')
+            .insert({
+              id: userId,
+              email: account.email,
+              full_name: account.full_name,
+              role: account.role,
+              created_at: new Date().toISOString()
+            });
+          if (profileErr && !profileErr.message.includes('duplicate')) {
+            console.error('❌ Erreur création profil:', profileErr);
+          }
+        }
       }
 
-      console.log('✅ Profils créés avec succès:');
-      profiles.forEach(profile => {
-        console.log(`   - ${profile.email} (ID: ${profile.id})`);
-      });
-    }
+      return userId;
+    };
+
+    const clientUserId = await ensureUser(TEST_ACCOUNTS.client);
+    const adminUserId = await ensureUser(TEST_ACCOUNTS.admin);
+
+    console.log(`✅ Comptes Auth prêts: client=${clientUserId}, admin=${adminUserId}`);
 
     // Vérifier si les projets existent déjà
-    const { data: existingProjects } = await supabase
+    const { data: existingProjects } = await adminClient
       .from('projects')
       .select('id, name')
       .in('id', TEST_PROJECTS.map(p => p.id));
@@ -99,9 +121,11 @@ async function initTestAccounts() {
       });
     } else {
       // Créer les projets de test
-      const { error: projectError } = await supabase
+      // Injecter l'id client réel
+      const projectsToInsert = TEST_PROJECTS.map(p => ({ ...p, client_id: clientUserId }));
+      const { error: projectError } = await adminClient
         .from('projects')
-        .insert(TEST_PROJECTS);
+        .insert(projectsToInsert);
 
       if (projectError) {
         console.error('❌ Erreur lors de la création des projets:', projectError);
@@ -115,7 +139,7 @@ async function initTestAccounts() {
     }
 
     console.log('\n🎉 Initialisation terminée avec succès!');
-    console.log('\n📋 Comptes de test disponibles:');
+    console.log('\n📋 Comptes disponibles:');
     console.log(`   👤 Client: ${TEST_ACCOUNTS.client.email} / ${TEST_ACCOUNTS.client.password}`);
     console.log(`   👨‍💼 Admin: ${TEST_ACCOUNTS.admin.email} / ${TEST_ACCOUNTS.admin.password}`);
 

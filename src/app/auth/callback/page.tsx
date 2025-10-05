@@ -54,8 +54,8 @@ const AuthCallbackPage = () => {
 
           localStorage.setItem('auth_user', JSON.stringify(authUser))
           
-          // Rediriger vers le dashboard unifié; l'UI s'adapte au rôle
-          router.push('/dashboard')
+          // Rediriger selon le rôle
+          router.push(authUser.role === 'admin' ? '/admin' : '/client')
         } else {
           // Pas de session, rediriger vers la page d'accueil
           router.push('/')

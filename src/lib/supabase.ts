@@ -10,6 +10,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 // Pour les composants client
 export const createSupabaseClient = () => createClientComponentClient()
 
+// Client avec clé service role (utilisable uniquement côté serveur/scripts)
+export const createSupabaseServiceRoleClient = () => createClient(supabaseUrl, supabaseServiceKey)
+
 // Types pour la base de données
 export interface Profile {
   id: string

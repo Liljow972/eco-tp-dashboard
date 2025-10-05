@@ -5,7 +5,15 @@ const nextConfig = {
   // Désactiver l'optimisation d'images pour Netlify
   images: {
     unoptimized: true,
-    domains: ['lh3.googleusercontent.com'],
+    domains: ['lh3.googleusercontent.com', 'images.unsplash.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   // Configuration pour les fonctions serverless
   experimental: {
