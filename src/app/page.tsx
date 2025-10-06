@@ -13,12 +13,12 @@ export default function LandingPage() {
             <Image
               src="/LOGO_ECO_TP-05.png"
               alt="Logo EcoTP"
-              width={40}
-              height={40}
+              width={96}
+              height={96}
               className="rounded-lg"
               priority
             />
-            <span className="text-xl font-semibold text-gray-900">EcoTP Dashboard</span>
+            <span className="text-2xl font-semibold text-gray-900">CRM</span>
           </div>
           <nav className="flex items-center space-x-6">
             <Link href="/contact" className="text-gray-700 hover:text-gray-900">Nous contacter</Link>
