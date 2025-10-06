@@ -50,7 +50,7 @@ const Navigation = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-primary-600">EcoTP</h1>
+              <h1 className="text-xl font-bold text-primary-600">CRM</h1>
             </div>
             {/* Desktop Navigation */}
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

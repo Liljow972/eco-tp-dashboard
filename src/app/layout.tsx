@@ -7,8 +7,8 @@ import { AuthProvider } from '@/contexts/AuthContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'EcoTP - Dashboard Client',
-  description: 'Espace membre EcoTP pour le suivi de vos projets de terrassement écologique',
+  title: 'CRM - Dashboard Client',
+  description: 'Espace membre CRM pour le suivi de vos projets de terrassement écologique',
 }
 
 export default function RootLayout({

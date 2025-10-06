@@ -120,8 +120,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
             </h2>
             <p className="text-gray-600">
               {mode === 'login' 
-                ? 'Accédez à votre espace EcoTP' 
-                : 'Créez votre compte EcoTP'
+                ? 'Accédez à votre espace CRM' 
+                : 'Créez votre compte CRM'
               }
             </p>
           </div>

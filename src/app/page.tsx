@@ -12,7 +12,7 @@ export default function LandingPage() {
             {/* Logo PNG fourni */}
             <Image
               src="/LOGO_ECO_TP-05.png"
-              alt="Logo EcoTP"
+              alt="Logo CRM"
               width={120}
               height={120}
               className="rounded-lg"

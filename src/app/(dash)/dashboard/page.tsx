@@ -60,11 +60,11 @@ export default function DashboardPage() {
         {/* Bannière de bienvenue */}
         <div
           className="relative rounded-xl overflow-hidden"
-          aria-label="Bienvenue sur votre espace Eco TP"
+          aria-label="Bienvenue sur votre espace CRM"
         >
           <div className="bg-ecotp-green text-ecotp-white p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
             <div className="sm:col-span-2">
-              <h2 className="text-2xl sm:text-3xl font-bold">Bienvenue sur votre espace Eco TP</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold">Bienvenue sur votre espace CRM</h2>
               <p className="mt-2 opacity-90">Gérez vos projets de terrassement écologique en toute simplicité</p>
             </div>
             <div

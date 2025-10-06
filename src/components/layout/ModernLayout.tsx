@@ -130,10 +130,10 @@ export default function ModernLayout({
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-3">
                 <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center shadow-lg bg-white">
-                  <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo EcoTP" width={48} height={48} priority />
+                  <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo CRM" width={48} height={48} priority />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">EcoTP</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">CRM</h1>
                   <p className="text-sm text-gray-600 capitalize">{userRole}</p>
                 </div>
               </Link>
