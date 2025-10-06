@@ -10,7 +10,7 @@ export default function DashLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen bg-ecotp-beige">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <Header onToggleSidebar={() => setSidebarOpen((v) => !v)} />
-      <main className="md:ml-64 ml-0 px-0 sm:px-6 py-6">
+      <main className="md:ml-64 ml-0 px-4 sm:px-6 py-6">
         {children}
       </main>
     </div>

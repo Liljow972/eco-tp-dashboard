@@ -66,7 +66,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
             aria-label="Bandeau chantier écologique"
           >
             <div className="absolute inset-0 bg-ecotp-green/60 pointer-events-none" />
-            <div className="relative z-10 h-full px-0 sm:px-6 flex items-center justify-between">
+            <div className="relative z-10 h-full px-3 sm:px-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button
                   type="button"

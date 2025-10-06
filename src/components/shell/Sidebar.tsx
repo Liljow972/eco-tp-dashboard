@@ -44,8 +44,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-ecotp-green text-ecotp-white flex-col z-40">
         <div className="h-16 flex items-center px-4 border-b border-ecotp-white/20">
-          <div className="h-9 w-9 rounded-md overflow-hidden bg-ecotp-white/20 mr-3 flex items-center justify-center" aria-hidden={false}>
-            <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo EcoTP" width={36} height={36} priority />
+          <div className="h-14 w-14 rounded-md overflow-hidden bg-ecotp-white/20 mr-3 flex items-center justify-center" aria-hidden={false}>
+            <NextImage src="/LOGO_ECO_TP-06.png" alt="Logo EcoTP blanc" width={56} height={56} priority />
           </div>
           <div>
             <p className="text-sm font-semibold">EcoTP</p>
@@ -85,8 +85,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
           <aside className="absolute left-0 top-0 h-full w-64 bg-ecotp-green text-ecotp-white flex flex-col shadow-lg transform transition-transform duration-200 ease-out translate-x-0">
             <div className="h-16 flex items-center px-4 border-b border-ecotp-white/20 justify-between">
               <div className="flex items-center">
-                <div className="h-9 w-9 rounded-md overflow-hidden bg-ecotp-white/20 mr-3 flex items-center justify-center" aria-hidden={false}>
-                  <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo EcoTP" width={36} height={36} priority />
+                <div className="h-14 w-14 rounded-md overflow-hidden bg-ecotp-white/20 mr-3 flex items-center justify-center" aria-hidden={false}>
+                  <NextImage src="/LOGO_ECO_TP-06.png" alt="Logo EcoTP blanc" width={56} height={56} priority />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">EcoTP</p>
