@@ -13,8 +13,8 @@ export default function LandingPage() {
             <Image
               src="/LOGO_ECO_TP-05.png"
               alt="Logo EcoTP"
-              width={96}
-              height={96}
+              width={120}
+              height={120}
               className="rounded-lg"
               priority
             />

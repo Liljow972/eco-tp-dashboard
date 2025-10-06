@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Configuration pour Netlify/Vercel
-  trailingSlash: true,
+  trailingSlash: false,
   // Désactiver l'optimisation d'images pour Netlify
   images: {
     unoptimized: true,
