@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { AuthService } from '@/lib/auth'
 import ProjectTimeline, { Project, TimelineStep } from '@/components/ProjectTimeline'
 import { supabase } from '@/lib/supabase'
-import { Image as ImageIcon, MessageSquare, Lock, Eye } from 'lucide-react'
+import { Image as ImageIcon, MessageSquare, Lock, Eye, CloudSun } from 'lucide-react'
+import PremiumCard from '@/components/premium/PremiumCard'
 
 // Teaser Component (Client Version)
 const PremiumTeaser = ({ title, description, icon: Icon, onDemoClick, isUnlocked }: any) => {
@@ -51,7 +52,7 @@ export default function ProjectsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
-  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages'>('timeline')
+  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages' | 'weather'>('timeline')
   const [demoPremium, setDemoPremium] = useState(false)
 
   useEffect(() => {
@@ -146,8 +147,8 @@ export default function ProjectsPage() {
           <button
             onClick={() => setCurrentTab('timeline')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${currentTab === 'timeline'
-                ? 'border-ecotp-green-500 text-ecotp-green-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-ecotp-green-500 text-ecotp-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
           >
             Avancement
@@ -155,8 +156,8 @@ export default function ProjectsPage() {
           <button
             onClick={() => setCurrentTab('photos')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'photos'
-                ? 'border-ecotp-green-500 text-ecotp-green-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-ecotp-green-500 text-ecotp-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
           >
             <ImageIcon className="w-4 h-4" />
@@ -165,16 +166,27 @@ export default function ProjectsPage() {
           <button
             onClick={() => setCurrentTab('messages')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'messages'
-                ? 'border-ecotp-green-500 text-ecotp-green-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-ecotp-green-500 text-ecotp-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
           >
             <MessageSquare className="w-4 h-4" />
             Messagerie
           </button>
+          <button
+            onClick={() => setCurrentTab('weather')}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'weather'
+              ? 'border-ecotp-green-500 text-ecotp-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+          >
+            <CloudSun className="w-4 h-4" />
+            Météo (Premium)
+          </button>
         </nav>
       </div>
 
+      {/* CONTENT AREA */}
       <div className="min-h-[400px]">
         {currentTab === 'timeline' && (
           <ProjectTimeline
@@ -186,6 +198,7 @@ export default function ProjectsPage() {
             isEditable={false} // Client Read-Only
           />
         )}
+
         {currentTab === 'photos' && (
           <PremiumTeaser
             title="Galerie Chantier"
@@ -203,6 +216,15 @@ export default function ProjectsPage() {
             icon={MessageSquare}
             isUnlocked={demoPremium}
             onDemoClick={() => setDemoPremium(!demoPremium)}
+          />
+        )}
+
+        {currentTab === 'weather' && (
+          <PremiumCard
+            title="Météo Predictive"
+            description="Optimisez vos chantiers avec notre module d'analyse prédictive. Anticipez les retards météo et les coûts."
+            buttonText="Passer en Premium"
+            href="/premium-client-info" // Or modal, for now just reuse or custom
           />
         )}
       </div>

@@ -5,8 +5,9 @@ import { supabase } from '@/lib/supabase'
 import ProjectTimeline, { Project, TimelineStep } from '@/components/ProjectTimeline'
 import Modal from '@/components/ui/Modal'
 import ProjectForm from '@/components/admin/ProjectForm'
+import PremiumCard from '@/components/premium/PremiumCard'
 
-import { ArrowLeft, Search, Filter, Plus, Edit, Wand2, Image as ImageIcon, MessageSquare, Lock, Eye } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, Edit, Wand2, Image as ImageIcon, MessageSquare, Lock, Eye, CloudSun } from 'lucide-react'
 
 // Teaser Components
 const PremiumTeaser = ({ title, description, icon: Icon, onDemoClick, isUnlocked }: any) => {
@@ -51,7 +52,7 @@ const PremiumTeaser = ({ title, description, icon: Icon, onDemoClick, isUnlocked
 
 export default function AvancementPage() {
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
-  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages'>('timeline')
+  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages' | 'weather'>('timeline')
   const [demoPremium, setDemoPremium] = useState(false) // Secret toggle
 
   const [projects, setProjects] = useState<any[]>([]) // Using any to accomodate mixed types during initial dev
@@ -322,8 +323,8 @@ export default function AvancementPage() {
               <button
                 onClick={() => setCurrentTab('timeline')}
                 className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${currentTab === 'timeline'
-                    ? 'border-ecotp-green-500 text-ecotp-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-ecotp-green-500 text-ecotp-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
                 Timeline & Avancement
@@ -331,8 +332,8 @@ export default function AvancementPage() {
               <button
                 onClick={() => setCurrentTab('photos')}
                 className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'photos'
-                    ? 'border-ecotp-green-500 text-ecotp-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-ecotp-green-500 text-ecotp-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
                 <ImageIcon className="w-4 h-4" />
@@ -347,6 +348,16 @@ export default function AvancementPage() {
               >
                 <MessageSquare className="w-4 h-4" />
                 Messagerie
+              </button>
+              <button
+                onClick={() => setCurrentTab('weather')}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'weather'
+                    ? 'border-ecotp-green-500 text-ecotp-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                <CloudSun className="w-4 h-4" />
+                Météo (Premium)
               </button>
             </nav>
           </div>
@@ -383,6 +394,10 @@ export default function AvancementPage() {
                 isUnlocked={demoPremium}
                 onDemoClick={() => setDemoPremium(!demoPremium)}
               />
+            )}
+
+            {currentTab === 'weather' && (
+              <PremiumCard />
             )}
           </div>
         </div>
