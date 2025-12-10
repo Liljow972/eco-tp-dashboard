@@ -104,6 +104,12 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
               Déconnexion
             </button>
           </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-[10px] text-ecotp-green-400/60 font-medium">
+              Built by <a href="https://lj-design.fr" target="_blank" rel="noopener noreferrer" className="hover:text-ecotp-green-300 transition-colors tracking-wide">LJ DESIGN</a>
+            </p>
+          </div>
         </div>
       </aside>
     </>
