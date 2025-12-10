@@ -64,3 +64,44 @@ create policy "Admins view all steps" on project_steps for select using (
 create policy "Clients view own project steps" on project_steps for select using (
   exists ( select 1 from projects where id = project_steps.project_id and client_id = auth.uid() )
 );
+
+-- DOCUMENTS (GED)
+create table if not exists public.documents (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  file_path text not null, -- Storage path
+  size bigint,
+  type text,
+  owner_id uuid references public.profiles(id),
+  project_id uuid references public.projects(id),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.documents enable row level security;
+
+create policy "Admins manage all documents" on documents for all using (
+  exists ( select 1 from profiles where id = auth.uid() and role = 'admin' )
+);
+
+create policy "Clients view own documents" on documents for select using (
+  owner_id = auth.uid() or 
+  exists ( select 1 from projects where id = documents.project_id and client_id = auth.uid() )
+);
+
+-- COLLABORATION TASKS
+create table if not exists public.tasks (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  description text,
+  status text check (status in ('todo', 'in_progress', 'done')) default 'todo',
+  priority text check (priority in ('low', 'medium', 'high')) default 'medium',
+  project_id uuid references public.projects(id),
+  assignee_id uuid references public.profiles(id),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.tasks enable row level security;
+
+create policy "Admins manage all tasks" on tasks for all using (
+  exists ( select 1 from profiles where id = auth.uid() and role = 'admin' )
+);
