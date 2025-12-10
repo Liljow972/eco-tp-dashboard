@@ -1,307 +1,313 @@
 "use client"
-import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { Leaf, Activity, Users, ArrowRight, TrendingUp, FileText, User as UserIcon, Download, Play, Circle, CheckCircle, Recycle, Truck } from 'lucide-react'
-import Card from '@/components/Card'
+
+import { useEffect, useState } from 'react'
+import {
+  Leaf, Activity, Users, ArrowUpRight, TrendingUp,
+  FileText, DollarSign, Clock, MoreHorizontal, Calendar, PlusCircle
+} from 'lucide-react'
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts'
 import { AuthService } from '@/lib/auth'
-import { useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+// Types
+interface KPIStats {
+  activeProjects: number
+  budget: number
+  collaborators: number
+  co2Saved: number
+}
+
+const dataArea = [
+  { name: 'Jan', avancement: 10, budget: 15 },
+  { name: 'Fév', avancement: 25, budget: 20 },
+  { name: 'Mar', avancement: 45, budget: 35 },
+  { name: 'Avr', avancement: 60, budget: 50 },
+  { name: 'Mai', avancement: 75, budget: 65 },
+  { name: 'Juin', avancement: 85, budget: 70 },
+  { name: 'Juil', avancement: 100, budget: 90 },
+];
+
+const dataPie = [
+  { name: 'Terrassement', value: 400 },
+  { name: 'Fondations', value: 300 },
+  { name: 'Finitions', value: 300 },
+  { name: 'Autres', value: 200 },
+];
+
+const COLORS = ['#166534', '#22c55e', '#86efac', '#dcfce7'];
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string>('')
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'avancement'>('overview')
-  const [projects, setProjects] = useState<any[]>([])
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
-  const searchParams = useSearchParams()
+  const [stats, setStats] = useState<KPIStats>({ activeProjects: 0, budget: 0, collaborators: 0, co2Saved: 0 })
+  const [recentProjects, setRecentProjects] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const user = AuthService.getCurrentUser()
     setUserName(user?.name || 'Utilisateur')
     setIsAdmin(user?.role === 'admin')
-    const tabParam = searchParams.get('tab')
-    if (tabParam === 'avancement') setActiveTab('avancement')
+    fetchDashboardData()
   }, [])
 
-  useEffect(() => {
-    if (!isAdmin) return
-    // Charger les projets pour l'aperçu et l'onglet avancement
-    fetch('/api/projects')
-      .then((r) => r.json())
-      .then((data) => {
-        const list = Array.isArray(data) ? data : []
-        setProjects(list)
-        setSelectedProjectId(list?.[0]?.id || '')
+  const fetchDashboardData = async () => {
+    try {
+      // 1. Fetch Projects
+      const { data: projects, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+
+      if (projectsError) throw projectsError
+
+      // 2. Calculate Stats
+      const active = projects?.filter(p => p.status === 'in_progress').length || 0
+      const totalBudget = projects?.reduce((acc, curr) => acc + (curr.budget || 0), 0) || 0
+
+      // 3. CO2 calculation (mock logic based on progress/budget for demo)
+      // 1000€ budget = ~0.5 Tonne CO2 saved via eco-methods (just a metric)
+      const co2 = Math.round((totalBudget / 1000) * 0.5)
+
+      // 4. Counts
+      // Collaborators would typically be another query, for now use number of distinct clients
+      const clients = new Set(projects?.map(p => p.client_id)).size || 0
+
+      setStats({
+        activeProjects: active,
+        budget: totalBudget,
+        collaborators: clients > 0 ? clients : 1, // At least the user
+        co2Saved: co2
       })
-      .catch(() => {})
-  }, [isAdmin])
 
-  const selectedProject = useMemo(() => {
-    const list = Array.isArray(projects) ? projects : []
-    return list.find((p: any) => p.id === selectedProjectId)
-  }, [projects, selectedProjectId])
+      // 5. Recent Activity
+      setRecentProjects(projects?.slice(0, 5) || [])
 
-  // Éviter l'itération directe sur Set (compatibilité TS target)
-  const uniqueClientNames = useMemo(() => {
-    const names: string[] = []
-    projects.forEach((p: any) => {
-      const n = p?.profiles?.name
-      if (n && !names.includes(n)) names.push(n)
-    })
-    return names
-  }, [projects])
-
-  if (isAdmin) {
-    // Admin: reproduire le visuel demandé (bannière + KPI + fichiers)
-    const heroURL = encodeURIComponent(
-      'https://images.unsplash.com/photo-1602204097741-b2f8ef1c6845?q=80&w=1200&auto=format&fit=crop'
-    )
-    return (
-      <div className="space-y-6">
-        {/* Bannière de bienvenue */}
-        <div
-          className="relative rounded-xl overflow-hidden"
-          aria-label="Bienvenue sur votre espace CRM"
-        >
-          <div className="bg-ecotp-green text-ecotp-white p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-            <div className="sm:col-span-2">
-              <h2 className="text-2xl sm:text-3xl font-bold">Bienvenue sur votre espace CRM</h2>
-              <p className="mt-2 opacity-90">Gérez vos projets de terrassement écologique en toute simplicité</p>
-            </div>
-            <div
-              className="rounded-lg h-28 sm:h-32 bg-center bg-cover"
-              style={{ backgroundImage: `url('/api/image-proxy?url=${heroURL}')` }}
-            />
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 rounded-lg text-sm ${activeTab === 'overview' ? 'bg-ecotp-green text-white' : 'bg-ecotp-white text-black'} border border-ecotp-gray-200`}
-          >
-            Vue d'ensemble
-          </button>
-          <button
-            onClick={() => setActiveTab('avancement')}
-            className={`px-4 py-2 rounded-lg text-sm ${activeTab === 'avancement' ? 'bg-ecotp-green text-white' : 'bg-ecotp-white text-black'} border border-ecotp-gray-200`}
-          >
-            Suivi en temps réel
-          </button>
-        </div>
-
-        {activeTab === 'overview' && (
-        <>
-        {/* KPI */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Projets actifs', value: 12 },
-            { label: 'Tâches en cours', value: 28 },
-            { label: 'Fichiers partagés', value: 164 },
-            { label: 'Collaborateurs', value: 8 },
-          ].map((kpi) => (
-            <Card key={kpi.label} className="bg-ecotp-white">
-              <p className="text-black/70 text-sm">{kpi.label}</p>
-              <p className="text-ecotp-green text-2xl font-semibold mt-2">{kpi.value}</p>
-            </Card>
-          ))}
-        </div>
-
-        {/* Suivi des projets & Fichiers récents */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-ecotp-white" title="Suivi des projets">
-            <div className="h-40 md:h-56 rounded border border-ecotp-gray-200 flex items-center justify-center text-black/60">
-              Graphiques et progression (placeholder)
-            </div>
-          </Card>
-          <Card className="bg-ecotp-white" title="Fichiers récents">
-            <ul className="space-y-3">
-              {[
-                { name: 'Plan_Terrassement_2023.pdf', type: 'pdf', color: 'text-red-600' },
-                { name: 'Budget_Q1_2023.xlsx', type: 'xlsx', color: 'text-green-600' },
-              ].map((file) => (
-                <li key={file.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${file.type === 'pdf' ? 'bg-red-500' : 'bg-green-500'}`} />
-                    <span className="text-black">{file.name}</span>
-                  </div>
-                  <button className="p-1 rounded hover:bg-ecotp-gray-100" title="Télécharger">
-                    <Download className="h-4 w-4 text-ecotp-green" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </div>
-        {/* Filtres + Aperçu table projets pour ressembler au visuel */}
-        <Card className="bg-ecotp-white" title="Filtres">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <label className="text-black font-medium">Statut</label>
-              <select className="mt-1 w-full border border-ecotp-gray-200 rounded px-3 py-2">
-                <option>Tous</option>
-                <option>En cours</option>
-                <option>Terminé</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-black font-medium">Depuis</label>
-              <input type="date" className="mt-1 w-full border border-ecotp-gray-200 rounded px-3 py-2" />
-            </div>
-            <div>
-              <label className="text-black font-medium">Jusqu'à</label>
-              <input type="date" className="mt-1 w-full border border-ecotp-gray-200 rounded px-3 py-2" />
-            </div>
-            <div>
-              <label className="text-black font-medium">Client</label>
-              <select className="mt-1 w-full border border-ecotp-gray-200 rounded px-3 py-2">
-                <option>Tous</option>
-                {uniqueClientNames.map((n) => (
-                  <option key={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </Card>
-        <Card className="bg-ecotp-white" title="Projets">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-black">
-                  <th className="px-4 py-2">Projet</th>
-                  <th className="px-4 py-2">Statut</th>
-                  <th className="px-4 py-2">Avancement</th>
-                  <th className="px-4 py-2">Début</th>
-                  <th className="px-4 py-2">Client</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(Array.isArray(projects) ? projects : []).map((p) => (
-                  <tr key={p.id} className="border-t border-ecotp-gray-200">
-                    <td className="px-4 py-3 text-black">{p.name}</td>
-                    <td className="px-4 py-3 text-black/80 capitalize">{p.status?.replace('_', ' ')}</td>
-                    <td className="px-4 py-3">
-                      <div className="w-56 h-2 bg-ecotp-gray-200 rounded-full">
-                        <div className="h-2 bg-ecotp-green rounded-full" style={{ width: `${p.progress || 0}%` }} />
-                      </div>
-                      <div className="text-ecotp-green text-xs mt-1">{p.progress || 0}%</div>
-                    </td>
-                    <td className="px-4 py-3 text-black/80">{p.start_date || '-'}</td>
-                    <td className="px-4 py-3 text-black">{p.profiles?.name || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-        </>
-        )}
-
-        {activeTab === 'avancement' && (
-          <>
-            <Card className="bg-ecotp-white" title={selectedProject ? selectedProject.name : 'Avancement du projet'}>
-              <div className="flex items-center justify-between">
-                <div className="text-black/80">
-                  Client: {selectedProject?.profiles?.name || '—'}<br />
-                  Statut: {selectedProject?.status || '—'}
-                </div>
-                <div className="text-right">
-                  <p className="text-ecotp-green text-2xl font-semibold">{selectedProject?.progress || 0}%</p>
-                  <p className="text-black/60 text-sm">Terminé</p>
-                </div>
-              </div>
-              <div className="mt-3 w-full bg-ecotp-gray-200 rounded-full h-3">
-                <div className="h-3 bg-ecotp-green rounded-full" style={{ width: `${selectedProject?.progress || 0}%` }} />
-              </div>
-            </Card>
-            <Card className="bg-ecotp-white" title="Étapes du projet">
-              <div className="space-y-6">
-                {[
-                  { name: 'Lancement', desc: 'Validation du projet et préparation', icon: Play, threshold: 20 },
-                  { name: 'Travaux', desc: 'Réalisation des travaux de terrassement', icon: Circle, threshold: 60 },
-                  { name: 'Finalisation', desc: 'Finitions et contrôles qualité', icon: CheckCircle, threshold: 80 },
-                  { name: 'Tri écologique', desc: 'Tri et recyclage des matériaux', icon: Recycle, threshold: 95 },
-                  { name: 'Livraison', desc: 'Livraison finale du projet', icon: Truck, threshold: 100 },
-                ].map((step, idx) => {
-                  const Icon = step.icon
-                  const progress = selectedProject?.progress || 0
-                  const completed = progress >= step.threshold
-                  const current = progress < step.threshold && (idx === 0 || progress >= (step.threshold - 40))
-                  return (
-                    <div key={step.name} className="flex items-start gap-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${completed ? 'bg-ecotp-green/20 text-ecotp-green' : current ? 'bg-ecotp-green/10 text-ecotp-green' : 'bg-ecotp-gray-200 text-black/50'}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <p className="text-black font-medium">{step.name}</p>
-                          {completed && (
-                            <span className="text-xs bg-ecotp-green/15 text-ecotp-green px-2 py-0.5 rounded-full">Terminé</span>
-                          )}
-                          {current && !completed && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">En cours</span>
-                          )}
-                        </div>
-                        <p className="text-black/70">{step.desc}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-          </>
-        )}
-      </div>
-    )
+    } catch (error) {
+      console.error("Error loading dashboard:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Client: vue d'ensemble simple (projets, documents, paramètres)
+  // Fallback / Loading State
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500 animate-pulse">Mise à jour du tableau de bord...</div>
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Greeting */}
-      <div>
-        <h2 className="text-2xl font-bold text-ecotp-green">Bonjour, {userName} 👋</h2>
-        <p className="text-black/70">Voici un aperçu rapide de votre plateforme.</p>
+    <div className="space-y-8 animate-fade-in-up">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+          <p className="text-gray-500 mt-1">
+            Bienvenue, <span className="font-semibold text-ecotp-green-700">{userName}</span>. Voici ce qui se passe aujourd'hui.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+            <Calendar className="w-4 h-4" />
+            Cette semaine
+          </button>
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-ecotp-green-600 text-white rounded-lg text-sm font-medium hover:bg-ecotp-green-700 transition-colors shadow-sm shadow-ecotp-green-900/20">
+            <PlusCircle className="w-4 h-4" />
+            Nouveau projet
+          </button>
+        </div>
       </div>
 
-      {/* Héros / raccourcis */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Card className="bg-ecotp-white">
-          <div className="flex items-start gap-3">
-            <Activity className="h-6 w-6 text-ecotp-green" aria-hidden />
-            <div>
-              <h3 className="text-ecotp-green font-semibold">Mes Projets</h3>
-              <p className="text-black/80">Suivi d’avancement et planning.</p>
-              <Link href="/projects" className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-ecotp-green text-white rounded focus:outline-none focus:ring-2 focus:ring-ecotp-green/60">
-                Ouvrir <ArrowRight className="h-4 w-4" />
-              </Link>
+      {/* KPI BENTO GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* KPI 1 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+          <div className="flex justify-between items-start">
+            <div className="p-2.5 bg-green-50 rounded-xl">
+              <Leaf className="w-6 h-6 text-ecotp-green-600" />
             </div>
           </div>
-        </Card>
-        <Card className="bg-ecotp-white">
-          <div className="flex items-start gap-3">
-            <FileText className="h-6 w-6 text-ecotp-green" aria-hidden />
-            <div>
-              <h3 className="text-ecotp-green font-semibold">Documents</h3>
-              <p className="text-black/80">Contrats, devis, livrables.</p>
-              <Link href="/files" className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-ecotp-green text-white rounded focus:outline-none focus:ring-2 focus:ring-ecotp-green/60">
-                Ouvrir <ArrowRight className="h-4 w-4" />
-              </Link>
+          <div className="mt-4">
+            <h3 className="text-gray-500 text-sm font-medium">CO2 Économisé</h3>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.co2Saved} Tonnes</p>
+          </div>
+        </div>
+
+        {/* KPI 2 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+          <div className="flex justify-between items-start">
+            <div className="p-2.5 bg-blue-50 rounded-xl">
+              <Activity className="w-6 h-6 text-blue-600" />
+            </div>
+            <span className="flex items-center text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+              En cours
+            </span>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-gray-500 text-sm font-medium">Projets Actifs</h3>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.activeProjects} Chantiers</p>
+          </div>
+        </div>
+
+        {/* KPI 3 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+          <div className="flex justify-between items-start">
+            <div className="p-2.5 bg-orange-50 rounded-xl">
+              <DollarSign className="w-6 h-6 text-orange-600" />
             </div>
           </div>
-        </Card>
-        <Card className="bg-ecotp-white">
-          <div className="flex items-start gap-3">
-            <UserIcon className="h-6 w-6 text-ecotp-green" aria-hidden />
-            <div>
-              <h3 className="text-ecotp-green font-semibold">Paramètres</h3>
-              <p className="text-black/80">Profil et préférences.</p>
-              <Link href="/settings" className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-ecotp-green text-white rounded focus:outline-none focus:ring-2 focus:ring-ecotp-green/60">
-                Ouvrir <ArrowRight className="h-4 w-4" />
-              </Link>
+          <div className="mt-4">
+            <h3 className="text-gray-500 text-sm font-medium">Budget Engagé</h3>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{(stats.budget / 1000).toFixed(1)}k €</p>
+          </div>
+        </div>
+
+        {/* KPI 4 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+          <div className="flex justify-between items-start">
+            <div className="p-2.5 bg-purple-50 rounded-xl">
+              <Users className="w-6 h-6 text-purple-600" />
             </div>
           </div>
-        </Card>
+          <div className="mt-4">
+            <h3 className="text-gray-500 text-sm font-medium">Clients / Acteurs</h3>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.collaborators}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* CHARTS SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Chart (Area) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Performance Globale</h3>
+              <p className="text-sm text-gray-500">Avancement cumulé vs Budget consommé</p>
+            </div>
+            <button className="text-gray-400 hover:text-gray-600">
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={dataArea} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorAvancement" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#166534" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#166534" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorBudget" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                <CartesianGrid vertical={false} stroke="#f3f4f6" />
+                <Tooltip
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Area type="monotone" dataKey="avancement" stroke="#166534" strokeWidth={3} fillOpacity={1} fill="url(#colorAvancement)" />
+                <Area type="monotone" dataKey="budget" stroke="#22c55e" strokeWidth={3} fillOpacity={1} fill="url(#colorBudget)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Secondary Chart (Pie) */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Répartition Budget</h3>
+            <button className="text-gray-400 hover:text-gray-600">
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="h-[300px] w-full flex flex-col justify-center items-center">
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={dataPie}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {dataPie.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* ACTIVITY & DOCUMENTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Activité Récente</h3>
+            <button className="text-sm text-ecotp-green-600 font-medium hover:text-ecotp-green-700">Voir tout</button>
+          </div>
+
+          {recentProjects.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+              <FileText className="w-12 h-12 mb-2 opacity-50" />
+              <p>Aucune activité récente.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {recentProjects.map((proj, i) => (
+                <div key={i} className="flex gap-4 items-start">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${proj.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                    <Activity className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-gray-900">{proj.name}</h4>
+                    <p className="text-sm text-gray-500">Mise à jour: {proj.progress}% effectué</p>
+                  </div>
+                  <span className="text-xs text-gray-400 font-medium">
+                    {new Date(proj.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gradient-to-br from-ecotp-green-900 to-ecotp-green-800 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+          <div className="relative z-10 h-full flex flex-col justify-between">
+            <div>
+              <h3 className="text-xl font-bold mb-2">Passez au niveau supérieur</h3>
+              <p className="text-ecotp-green-100 text-sm max-w-sm">
+                Optimisez vos chantiers avec notre module d'analyse prédictive. Anticipez les retards météo et les coûts.
+              </p>
+            </div>
+
+            <div className="mt-8 flex justify-center">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl w-full max-w-xs">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-green-200">System Status</span>
+                </div>
+                <div className="flex justify-between items-end">
+                  <span className="text-3xl font-bold">98%</span>
+                  <span className="text-xs text-green-200 mb-1">Efficacité Opérationnelle</span>
+                </div>
+              </div>
+            </div>
+
+            <button className="mt-6 w-full py-3 bg-white text-ecotp-green-900 font-bold rounded-xl hover:bg-ecotp-green-50 transition-colors shadow-lg">
+              Découvrir les outils Premium
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

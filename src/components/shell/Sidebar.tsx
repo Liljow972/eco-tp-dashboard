@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import NextImage from 'next/image'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Home, Files, LayoutGrid, Settings, Activity, Users } from 'lucide-react'
+import { Home, Files, LayoutGrid, Settings, Activity, Users, LogOut, FileText, PieChart } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AuthService } from '@/lib/auth'
 
@@ -11,118 +11,101 @@ type SidebarProps = {
   open?: boolean
   onClose?: () => void
 }
-function getNavItems(isAdmin: boolean) {
-  const base = [
-    { href: '/dashboard', label: "Vue d'ensemble", icon: Home },
+
+const navItems = {
+  common: [
+    { href: '/dashboard', label: 'Vue d\'ensemble', icon: Home },
     { href: '/projects', label: 'Projets', icon: LayoutGrid },
     { href: '/files', label: 'Documents', icon: Files },
     { href: '/settings', label: 'Paramètres', icon: Settings },
+  ],
+  admin: [
+    { href: '/dashboard', label: 'Tableau de bord', icon: PieChart },
+    { href: '/avancement', label: 'Suivi Chantier', icon: Activity },
+    { href: '/collaboration', label: 'Collaboration', icon: Users },
+    { href: '/files', label: 'GED', icon: FileText },
+    { href: '/settings', label: 'Paramètres', icon: Settings },
   ]
-  if (isAdmin) {
-    // Menu admin demandé: Tableau de bord, Suivi en temps réel, Collaboration, Fichiers
-    // Adapter les libellés/routes pour coller au visuel
-    return [
-      { href: '/dashboard', label: 'Tableau de bord', icon: Home },
-      { href: '/dashboard?tab=avancement', label: 'Suivi en temps réel', icon: Activity },
-      { href: '/collaboration', label: 'Collaboration', icon: Users },
-      { href: '/files', label: 'Fichiers', icon: Files },
-      { href: '/settings', label: 'Paramètres', icon: Settings },
-    ]
-  }
-  return base
 }
 
 export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [isAdmin, setIsAdmin] = useState(false)
+
   useEffect(() => {
     setIsAdmin(AuthService.isAdmin())
   }, [])
 
+  const items = isAdmin ? navItems.admin : navItems.common
+
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-ecotp-green text-ecotp-white flex-col z-40">
-        <div className="h-16 flex items-center px-4 border-b border-ecotp-white/20">
-          <div className="h-14 w-14 rounded-md overflow-hidden bg-ecotp-white/20 mr-3 flex items-center justify-center" aria-hidden={false}>
-            <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo CRM blanc" width={56} height={56} priority />
+      <div className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity md:hidden ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
+
+      <aside className={`fixed top-0 left-0 z-50 h-screen w-64 bg-ecotp-green-900 text-white transition-transform duration-300 ease-in-out md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+        {/* Logo Section */}
+        <div className="flex h-20 items-center gap-3 px-6 border-b border-ecotp-green-800/50 bg-ecotp-green-900/50 backdrop-blur-md">
+          <div className="relative h-10 w-10 flex-shrink-0">
+            <Image
+              src="/LOGO_ECO_TP-05.png"
+              alt="Eco TP"
+              fill
+              className="object-contain rounded-lg bg-white/10 p-1"
+            />
           </div>
-          <div>
-            <p className="text-sm font-semibold">CRM</p>
-            <p className="text-xs opacity-80">Dashboard</p>
+          <div className="flex flex-col">
+            <span className="font-bold text-lg tracking-tight">Eco TP</span>
+            <span className="text-xs text-ecotp-green-300">Dashboard</span>
           </div>
         </div>
-        <nav className="flex-1 py-4">
-          <ul className="space-y-1">
-            {getNavItems(isAdmin).map(({ href, label, icon: Icon }) => {
-              const active = pathname?.startsWith(href)
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={`flex items-center gap-3 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ecotp-white/70 aria-[current=page]:bg-ecotp-white/10 ${
-                      active ? 'bg-ecotp-white/10' : 'hover:bg-ecotp-white/5'
-                    }`}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    <Icon className="h-5 w-5" aria-hidden />
-                    <span>{label}</span>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+          {items.map((item) => {
+            const isActive = pathname === item.href
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                  ? 'bg-ecotp-green-500 text-white shadow-lg shadow-ecotp-green-900/20'
+                  : 'text-ecotp-green-100 hover:bg-ecotp-green-800/50 hover:text-white'
+                  }`}
+              >
+                <Icon className={`mr-3 h-5 w-5 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-ecotp-green-300 group-hover:text-white'}`} />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
-        <div className="p-4 text-xs opacity-80">
-          <p>Martinique · Terrassement écologique</p>
+
+        {/* User / Footer */}
+        <div className="border-t border-ecotp-green-800/50 p-4">
+          <div className="rounded-2xl bg-gradient-to-br from-ecotp-green-800 to-ecotp-green-900 p-4 border border-ecotp-green-700/50">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-full bg-ecotp-green-700 flex items-center justify-center border-2 border-ecotp-green-600">
+                <span className="text-sm font-bold">JD</span>
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-sm font-medium truncate">Jean Dupont</p>
+                <p className="text-xs text-ecotp-green-300 truncate">{isAdmin ? 'Administrateur' : 'Client'}</p>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                await AuthService.signOut()
+                window.location.href = '/login'
+              }}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-black/20 hover:bg-black/30 py-2 text-xs font-medium text-ecotp-green-100 transition-colors"
+            >
+              <LogOut size={14} />
+              Déconnexion
+            </button>
+          </div>
         </div>
       </aside>
-
-      {/* Mobile drawer */}
-      {open && (
-        <div className="md:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
-          <aside className="absolute left-0 top-0 h-full w-64 bg-ecotp-green text-ecotp-white flex flex-col shadow-lg transform transition-transform duration-200 ease-out translate-x-0">
-            <div className="h-16 flex items-center px-4 border-b border-ecotp-white/20 justify-between">
-              <div className="flex items-center">
-                <div className="h-14 w-14 rounded-md overflow-hidden bg-ecotp-white/20 mr-3 flex items-center justify-center" aria-hidden={false}>
-                  <NextImage src="/LOGO_ECO_TP-05.png" alt="Logo CRM blanc" width={56} height={56} priority />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">CRM</p>
-                  <p className="text-xs opacity-80">Dashboard</p>
-                </div>
-              </div>
-              <button onClick={onClose} className="px-2 py-1 rounded bg-ecotp-white/20 hover:bg-ecotp-white/30" aria-label="Fermer le menu">Fermer</button>
-            </div>
-            <nav className="flex-1 py-4 overflow-y-auto">
-              <ul className="space-y-1">
-                {getNavItems(isAdmin).map(({ href, label, icon: Icon }) => {
-                  const active = pathname?.startsWith(href)
-                  return (
-                    <li key={href}>
-                      <Link
-                        href={href}
-                        onClick={onClose}
-                        className={`flex items-center gap-3 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ecotp-white/70 aria-[current=page]:bg-ecotp-white/10 ${
-                          active ? 'bg-ecotp-white/10' : 'hover:bg-ecotp-white/5'
-                        }`}
-                        aria-current={active ? 'page' : undefined}
-                      >
-                        <Icon className="h-5 w-5" aria-hidden />
-                        <span>{label}</span>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-            </nav>
-            <div className="p-4 text-xs opacity-80">
-              <p>Martinique · Terrassement écologique</p>
-            </div>
-          </aside>
-        </div>
-      )}
     </>
   )
 }
