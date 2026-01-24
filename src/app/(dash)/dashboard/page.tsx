@@ -177,15 +177,15 @@ export default function DashboardPage() {
       </div>
 
       {/* CHARTS SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up" style={{animationDelay: '0.5s'}}>
         {/* Main Chart (Area) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-gray-900">Performance Globale</h3>
               <p className="text-sm text-gray-500">Avancement cumulé vs Budget consommé</p>
             </div>
-            <button className="text-gray-400 hover:text-gray-600">
+            <button className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-50 rounded-lg">
               <MoreHorizontal className="w-5 h-5" />
             </button>
           </div>
