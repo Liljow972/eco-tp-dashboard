@@ -221,17 +221,19 @@ const LoginPage = () => {
                     type="button"
                     onClick={() => quickLogin({ email: 'admin@ecotp.test', password: 'admin123' })}
                     disabled={loading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ecotp-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:ring-transparent disabled:opacity-50"
+                    data-testid="quick-login-admin"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ecotp-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:shadow transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-transparent disabled:opacity-50 active:translate-y-0"
                   >
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span> Admin
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Admin
                   </button>
                   <button
                     type="button"
                     onClick={() => quickLogin({ email: 'client@ecotp.test', password: 'client123' })}
                     disabled={loading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ecotp-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:ring-transparent disabled:opacity-50"
+                    data-testid="quick-login-client"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ecotp-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:shadow transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-transparent disabled:opacity-50 active:translate-y-0"
                   >
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Client
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Client
                   </button>
                 </div>
               </div>
