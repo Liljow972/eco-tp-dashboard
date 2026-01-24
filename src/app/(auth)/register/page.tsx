@@ -70,15 +70,15 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen flex w-full">
       {/* Left Pane - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-ecotp-beige-50 relative z-10 w-full">
-        <div className="absolute top-8 left-8">
-          <Link href="/" className="group flex items-center text-sm font-medium text-ecotp-gray-500 hover:text-ecotp-green-700 transition-colors">
-            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-ecotp-beige-50 relative z-10 w-full animate-fade-in">
+        <div className="absolute top-8 left-8 animate-fade-in-down">
+          <Link href="/" className="group flex items-center text-sm font-medium text-ecotp-gray-500 hover:text-ecotp-green-700 transition-all duration-300">
+            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
             Retour à l'accueil
           </Link>
         </div>
 
-        <div className="mx-auto w-full max-w-sm lg:w-[32rem]">
+        <div className="mx-auto w-full max-w-sm lg:w-[32rem] animate-fade-in-up">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold tracking-tight text-ecotp-green-900">Créer un nouveau compte</h2>
             <p className="mt-2 text-sm text-ecotp-gray-500">
@@ -87,8 +87,18 @@ const RegisterPage = () => {
           </div>
 
           <div className="mt-8">
-            {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>}
-            {message && <div className="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm">{message}</div>}
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm animate-fade-in-down flex items-center gap-2">
+                <span className="flex-shrink-0">❌</span>
+                <span>{error}</span>
+              </div>
+            )}
+            {message && (
+              <div className="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm animate-fade-in-down flex items-center gap-2">
+                <span className="flex-shrink-0">✅</span>
+                <span>{message}</span>
+              </div>
+            )}
 
             <form className="space-y-5" onSubmit={handleRegister}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
