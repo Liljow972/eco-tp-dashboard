@@ -97,9 +97,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in-up">
+    <div className="space-y-8">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
           <p className="text-gray-500 mt-1">
@@ -107,11 +107,11 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-300 hover:shadow hover:-translate-y-0.5 shadow-sm active:translate-y-0">
             <Calendar className="w-4 h-4" />
             Cette semaine
           </button>
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-ecotp-green-600 text-white rounded-lg text-sm font-medium hover:bg-ecotp-green-700 transition-colors shadow-sm shadow-ecotp-green-900/20">
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-ecotp-green-600 text-white rounded-lg text-sm font-medium hover:bg-ecotp-green-700 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 shadow-sm shadow-ecotp-green-900/20 active:translate-y-0">
             <PlusCircle className="w-4 h-4" />
             Nouveau projet
           </button>
@@ -121,9 +121,9 @@ export default function DashboardPage() {
       {/* KPI BENTO GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* KPI 1 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group hover:-translate-y-1 animate-fade-in-up" style={{animationDelay: '0.1s'}}>
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-green-50 rounded-xl">
+            <div className="p-2.5 bg-green-50 rounded-xl transition-all duration-300 group-hover:scale-110">
               <Leaf className="w-6 h-6 text-ecotp-green-600" />
             </div>
           </div>
@@ -134,12 +134,12 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI 2 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group hover:-translate-y-1 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-blue-50 rounded-xl">
+            <div className="p-2.5 bg-blue-50 rounded-xl transition-all duration-300 group-hover:scale-110">
               <Activity className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="flex items-center text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+            <span className="flex items-center text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full animate-pulse-slow">
               En cours
             </span>
           </div>
@@ -150,9 +150,9 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI 3 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group hover:-translate-y-1 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-orange-50 rounded-xl">
+            <div className="p-2.5 bg-orange-50 rounded-xl transition-all duration-300 group-hover:scale-110">
               <DollarSign className="w-6 h-6 text-orange-600" />
             </div>
           </div>
@@ -163,9 +163,9 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI 4 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group hover:-translate-y-1 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-purple-50 rounded-xl">
+            <div className="p-2.5 bg-purple-50 rounded-xl transition-all duration-300 group-hover:scale-110">
               <Users className="w-6 h-6 text-purple-600" />
             </div>
           </div>
