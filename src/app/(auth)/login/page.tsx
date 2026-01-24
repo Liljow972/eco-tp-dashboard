@@ -103,14 +103,18 @@ const LoginPage = () => {
           <div className="mt-8">
             <div className="mt-6">
               {error && (
-                <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm animate-fade-in-down flex items-center gap-2">
+                  <span className="flex-shrink-0">❌</span>
+                  <span>{error}</span>
+                </div>
               )}
               {message && (
-                <div className={`mb-4 p-3 rounded-lg text-sm ${message.includes('envoyé')
+                <div className={`mb-4 p-3 rounded-lg text-sm animate-fade-in-down flex items-center gap-2 ${message.includes('envoyé')
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : 'bg-red-50 text-red-700 border border-red-200'
                   }`}>
-                  {message}
+                  <span className="flex-shrink-0">{message.includes('envoyé') ? '✅' : '❌'}</span>
+                  <span>{message}</span>
                 </div>
               )}
 
