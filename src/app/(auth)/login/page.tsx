@@ -79,23 +79,23 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex w-full">
       {/* Left Pane - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-ecotp-beige-50 relative z-10">
-        <div className="absolute top-8 left-8">
-          <Link href="/" className="group flex items-center text-sm font-medium text-ecotp-gray-500 hover:text-ecotp-green-700 transition-colors">
-            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-ecotp-beige-50 relative z-10 animate-fade-in">
+        <div className="absolute top-8 left-8 animate-fade-in-down">
+          <Link href="/" className="group flex items-center text-sm font-medium text-ecotp-gray-500 hover:text-ecotp-green-700 transition-all duration-300">
+            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform duration-300" />
             Retour à l'accueil
           </Link>
         </div>
 
-        <div className="mx-auto w-full max-w-sm lg:w-96">
+        <div className="mx-auto w-full max-w-sm lg:w-96 animate-fade-in-up">
           <div className="text-center mb-10">
-            <div className="inline-flex justify-center mb-6">
-              <div className="relative w-16 h-16">
+            <div className="inline-flex justify-center mb-6 animate-scale-in">
+              <div className="relative w-16 h-16 hover-lift">
                 <Image src="/LOGO_ECO_TP-05.png" alt="Eco TP" fill className="object-contain rounded-xl" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-ecotp-green-900">Bon retour parmi nous</h2>
-            <p className="mt-2 text-sm text-ecotp-gray-500">
+            <h2 className="text-3xl font-bold tracking-tight text-ecotp-green-900 animate-fade-in-up">Bon retour parmi nous</h2>
+            <p className="mt-2 text-sm text-ecotp-gray-500 animate-fade-in-up" style={{animationDelay: '0.1s'}}>
               Heureux de vous revoir ! Connectez-vous pour accéder à vos chantiers.
             </p>
           </div>
