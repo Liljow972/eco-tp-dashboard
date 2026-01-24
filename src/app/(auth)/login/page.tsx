@@ -64,13 +64,21 @@ const LoginPage = () => {
     setPassword(creds.password)
     setLoading(true)
     setError('')
+    setMessage('')
+    
     try {
       const { user, error } = await AuthService.signInWithEmail(creds.email, creds.password)
       if (error || !user) {
         setError(error || 'Identifiants de démo invalides')
       } else {
+        setMessage('✅ Connexion réussie! Redirection...')
+        // Attendre un peu pour l'affichage du message
+        await new Promise(resolve => setTimeout(resolve, 500))
         router.push('/dashboard')
       }
+    } catch (err) {
+      console.error('Error in quickLogin:', err)
+      setError('Une erreur est survenue lors de la connexion')
     } finally {
       setLoading(false)
     }
