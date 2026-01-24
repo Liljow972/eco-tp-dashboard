@@ -216,10 +216,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Secondary Chart (Pie) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-900">Répartition Budget</h3>
-            <button className="text-gray-400 hover:text-gray-600">
+            <button className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-50 rounded-lg">
               <MoreHorizontal className="w-5 h-5" />
             </button>
           </div>
