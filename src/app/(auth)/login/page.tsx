@@ -71,9 +71,7 @@ const LoginPage = () => {
       if (error || !user) {
         setError(error || 'Identifiants de démo invalides')
       } else {
-        setMessage('✅ Connexion réussie! Redirection...')
-        // Attendre un peu pour l'affichage du message
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Redirection immédiate sans message
         router.push('/dashboard')
       }
     } catch (err) {
