@@ -225,12 +225,29 @@ const LoginPage = () => {
                 <div className="mt-6">
                   <button
                     type="button"
-                    onClick={() => {
-                      // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-                      const redirectUrl = window.location.origin + '/dashboard';
-                      window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+                    onClick={async () => {
+                      try {
+                        const { error } = await supabase.auth.signInWithOAuth({
+                          provider: 'google',
+                          options: {
+                            redirectTo: `${window.location.origin}/auth/callback-success`,
+                            queryParams: {
+                              access_type: 'offline',
+                              prompt: 'consent',
+                            }
+                          }
+                        })
+                        if (error) {
+                          console.error('Erreur Google OAuth:', error)
+                          setError('Impossible de se connecter avec Google')
+                        }
+                      } catch (err) {
+                        console.error('Erreur:', err)
+                        setError('Une erreur est survenue')
+                      }
                     }}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-white px-3 py-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-all duration-300 hover:shadow hover:-translate-y-0.5 active:translate-y-0"
+                    disabled={loading}
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-white px-3 py-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-all duration-300 hover:shadow hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24">
                       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
