@@ -231,6 +231,9 @@ export default function LandingPage() {
       <footer className="bg-white border-t border-ecotp-gray-100 py-12">
         <div className="max-w-7xl mx-auto px-6 text-center text-ecotp-gray-500 text-sm">
           <p>© 2024 Eco TP - Tous droits réservés.</p>
+          <p className="mt-2 text-xs text-ecotp-gray-400">
+            Built by <a href="https://lj-design.fr" target="_blank" rel="noopener noreferrer" className="hover:text-ecotp-green-600 transition-colors font-medium">LJ DESIGN</a>
+          </p>
         </div>
       </footer>
     </div>
