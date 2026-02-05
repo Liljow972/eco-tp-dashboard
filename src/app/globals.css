@@ -18,9 +18,6 @@
     @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl;
   }
   
-  .glass-card {
-    @apply bg-white/60 backdrop-blur-lg border border-white/30 shadow-lg hover:bg-white/80 hover:shadow-xl transition-all duration-300;
-  }
 
   .btn-primary {
     @apply bg-ecotp-green-500 hover:bg-ecotp-green-600 text-white font-medium py-3 px-6 rounded-xl shadow-lg shadow-ecotp-green-500/20 hover:shadow-ecotp-green-500/30 active:scale-95 transition-all duration-200 hover:-translate-y-0.5;

@@ -305,11 +305,11 @@ const LoginPage = () => {
 
       {/* Right Pane - Image & Glass */}
       <div className="hidden lg:block relative flex-1 bg-ecotp-green-900">
-        <div className="absolute inset-0 bg-[url('/DJI_0198-4.jpg')] bg-cover bg-center opacity-60 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-ecotp-green-900/90 to-ecotp-green-900/40"></div>
+        <div className="absolute inset-0 bg-[url('/DJI_0198-4.jpg')] bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/30"></div>
 
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg px-8">
-          <div className="glass-card p-10 rounded-3xl border border-white/20 text-white backdrop-blur-xl bg-white/10">
+          <div className="p-10 rounded-3xl border border-white/20 text-white backdrop-blur-xl bg-white/10 transition-all duration-300">
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
               <Leaf className="text-white w-8 h-8" />
             </div>
