@@ -44,18 +44,14 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
 
       <aside className={`fixed top-0 left-0 z-50 h-screen w-64 bg-ecotp-green-900 text-white transition-transform duration-300 ease-in-out md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo Section */}
-        <div className="flex h-20 items-center gap-3 px-6 border-b border-ecotp-green-800/50 bg-ecotp-green-900/50 backdrop-blur-md">
-          <div className="relative h-10 w-10 flex-shrink-0">
+        <div className="flex h-32 items-center justify-center px-6 border-b border-ecotp-green-800/50 bg-ecotp-green-900/50 backdrop-blur-md">
+          <div className="relative flex-shrink-0" style={{ width: '9rem', height: '9rem' }}>
             <Image
-              src="/LOGO_ECO_TP-05.png"
+              src="/LOGO_ECO_TP-06.png"
               alt="Eco TP"
               fill
-              className="object-contain rounded-lg bg-white/10 p-1"
+              className="object-contain"
             />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-lg tracking-tight">Eco TP</span>
-            <span className="text-xs text-ecotp-green-300">Dashboard</span>
           </div>
         </div>
 

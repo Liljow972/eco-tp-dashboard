@@ -90,8 +90,8 @@ const LoginPage = () => {
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div className="text-center mb-10">
             <div className="inline-flex justify-center mb-6">
-              <div className="relative w-16 h-16">
-                <Image src="/LOGO_ECO_TP-05.png" alt="Eco TP" fill className="object-contain rounded-xl" />
+              <div className="relative" style={{ width: '9rem', height: '9rem' }}>
+                <Image src="/LOGO_ECO_TP-05.png" alt="Eco TP" fill className="object-contain" />
               </div>
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-ecotp-green-900">Bon retour parmi nous</h2>
@@ -107,8 +107,8 @@ const LoginPage = () => {
               )}
               {message && (
                 <div className={`mb-4 p-3 rounded-lg text-sm ${message.includes('envoyé')
-                    ? 'bg-green-50 text-green-700 border border-green-200'
-                    : 'bg-red-50 text-red-700 border border-red-200'
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
                   }`}>
                   {message}
                 </div>
@@ -234,7 +234,7 @@ const LoginPage = () => {
 
       {/* Right Pane - Image & Glass */}
       <div className="hidden lg:block relative flex-1 bg-ecotp-green-900">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2940&auto=format&fit=crop')] bg-cover bg-center opacity-60 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-[url('/DJI_0198-4.jpg')] bg-cover bg-center opacity-60 mix-blend-overlay"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-ecotp-green-900/90 to-ecotp-green-900/40"></div>
 
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg px-8">

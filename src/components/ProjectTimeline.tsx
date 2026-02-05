@@ -203,7 +203,7 @@ export default function ProjectTimeline({
                 </div>
             </div>
 
-            {/* Alerts / Info Grid */}
+            {/* Alerts / Info Grid - MASQUÉ (non dynamique) 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-orange-50 rounded-2xl p-6 border border-orange-100">
                     <div className="flex items-start gap-3">
@@ -224,6 +224,7 @@ export default function ProjectTimeline({
                     </div>
                 </div>
             </div>
+            */}
         </div>
     )
 }

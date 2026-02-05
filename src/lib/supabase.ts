@@ -1,56 +1,67 @@
-import { createClient } from '@supabase/supabase-js'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+// Fichier Supabase désactivé - Mode développement local
+// Ce fichier existe uniquement pour éviter les erreurs d'import
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_anon_key'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder_service_key'
+export const supabase = {
+  auth: {
+    signInWithPassword: async () => ({ data: null, error: new Error('Supabase désactivé') }),
+    signOut: async () => { },
+    getUser: async () => ({ data: { user: null }, error: null }),
+    getSession: async () => ({ data: { session: null }, error: null }),
+    onAuthStateChange: () => {
+      return {
+        data: { subscription: { unsubscribe: () => { } } },
+      }
+    },
+  },
+  from: () => ({
+    select: () => ({
+      data: [],
+      error: null,
+      eq: () => ({
+        data: [],
+        error: null,
+        single: () => ({ data: null, error: null }),
+        order: () => ({ data: [], error: null }),
+      }),
+      order: () => ({
+        data: [],
+        error: null,
+        eq: () => ({ data: [], error: null }),
+      }),
+      single: () => ({ data: null, error: null }),
+    }),
+    insert: () => ({
+      data: null,
+      error: null,
+      select: () => ({ data: null, error: null }),
+    }),
+    update: () => ({
+      data: null,
+      error: null,
+      eq: () => ({ data: null, error: null }),
+    }),
+    delete: () => ({
+      data: null,
+      error: null,
+      eq: () => ({ data: null, error: null }),
+    }),
+  }),
+  storage: {
+    from: () => ({
+      upload: async () => ({ data: { path: 'demo-file.pdf' }, error: null }),
+      download: async () => ({ data: null, error: null }),
+      remove: async () => ({ data: null, error: null }),
+      list: async () => ({ data: [], error: null }),
+    }),
+  },
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const createSupabaseClient = () => supabase
+export const createSupabaseServiceRoleClient = () => supabase
 
-// Pour les composants client
-export const createSupabaseClient = () => createClientComponentClient()
-
-// Client avec clé service role (utilisable uniquement côté serveur/scripts)
-export const createSupabaseServiceRoleClient = () => createClient(supabaseUrl, supabaseServiceKey)
-
-// Types pour la base de données
-export interface Profile {
+export type Profile = {
   id: string
   email: string
   name: string
-  role: 'client' | 'admin'
-  created_at: string
-}
-
-export interface Project {
-  id: string
-  client_id: string
-  name: string
-  status: 'pending' | 'in_progress' | 'completed'
-  progress: number
-  budget?: number
-  spent?: number
-  start_date?: string
-  end_date?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface ProjectUpdate {
-  id: string
-  project_id: string
-  title: string
-  body: string
-  created_at: string
-}
-
-export interface Document {
-  id: string
-  project_id: string
-  label: string
-  type: 'contract' | 'invoice' | 'deliverable' | 'other'
-  file_path: string
-  file_size?: number
-  mime_type?: string
-  created_at: string
+  role: 'admin' | 'client'
 }

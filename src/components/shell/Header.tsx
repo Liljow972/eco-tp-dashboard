@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Menu, Bell, Search, Calendar, ChevronDown, LogOut, User as UserIcon, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { AuthService } from '@/lib/auth'
+import NotificationCenter from '@/components/NotificationCenter'
 
 export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const [searchOpen, setSearchOpen] = useState(false)
@@ -42,46 +43,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         <div className="flex items-center gap-x-4 lg:gap-x-6">
           <div className="flex items-center gap-x-4 border-l border-gray-200 pl-4">
             {/* Notifications */}
-            <div className="relative">
-              <button
-                type="button"
-                className="-m-2.5 p-2.5 text-gray-400 hover:text-ecotp-green-600 relative group transition-colors"
-                onClick={() => setNotifyOpen(!notifyOpen)}
-              >
-                <span className="sr-only">Notifications</span>
-                <Bell className="h-6 w-6" aria-hidden="true" />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white animate-pulse"></span>
-              </button>
-              {notifyOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setNotifyOpen(false)}></div>
-                  <div className="absolute right-0 mt-3 w-80 origin-top-right rounded-xl bg-white p-4 shadow-xl ring-1 ring-black ring-opacity-5 z-20 focus:outline-none animate-fade-in-up">
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
-                      <button className="text-xs text-ecotp-green-600 hover:text-ecotp-green-700">Tout marquer comme lu</button>
-                    </div>
-                    <ul className="space-y-3 max-h-[300px] overflow-y-auto">
-                      <li className="flex gap-3 items-start group cursor-pointer hover:bg-gray-50 p-2 rounded-lg -mx-2 transition-colors">
-                        <span className="h-2 w-2 mt-2 rounded-full bg-ecotp-green-500 flex-shrink-0"></span>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Nouveau document ajouté</p>
-                          <p className="text-xs text-gray-500">Plan_masse_v2.pdf a été ajouté au projet Villa Bel Air.</p>
-                          <p className="text-[10px] text-gray-400 mt-1">Il y a 5 min</p>
-                        </div>
-                      </li>
-                      <li className="flex gap-3 items-start group cursor-pointer hover:bg-gray-50 p-2 rounded-lg -mx-2 transition-colors">
-                        <span className="h-2 w-2 mt-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Avancement chantier</p>
-                          <p className="text-xs text-gray-500">L'étape "Fondations" est marquée comme terminée.</p>
-                          <p className="text-[10px] text-gray-400 mt-1">Il y a 2h</p>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                </>
-              )}
-            </div>
+            <NotificationCenter />
 
             {/* Calendar */}
             <div className="relative">

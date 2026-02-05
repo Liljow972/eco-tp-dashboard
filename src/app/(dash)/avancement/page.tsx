@@ -6,62 +6,21 @@ import ProjectTimeline, { Project, TimelineStep } from '@/components/ProjectTime
 import Modal from '@/components/ui/Modal'
 import ProjectForm from '@/components/admin/ProjectForm'
 import PremiumCard from '@/components/premium/PremiumCard'
+import PhotoGallery from '@/components/PhotoGallery'
+import Messaging from '@/components/Messaging'
 
-import { ArrowLeft, Search, Filter, Plus, Edit, Wand2, Image as ImageIcon, MessageSquare, Lock, Eye, CloudSun } from 'lucide-react'
-
-// Teaser Components
-const PremiumTeaser = ({ title, description, icon: Icon, onDemoClick, isUnlocked }: any) => {
-  if (isUnlocked) {
-    return (
-      <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center animate-fade-in">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-ecotp-green-400 to-ecotp-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-ecotp-green-200">
-          <Icon className="w-8 h-8 text-white" />
-        </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">{title} (Mode Démo)</h3>
-        <p className="text-gray-500 mb-6">Voici à quoi ressemblera le module une fois activé.</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 opacity-50 pointer-events-none select-none">
-          {/* Fake Content for background feel */}
-          {[1, 2, 3].map(i => <div key={i} className="aspect-square bg-gray-100 rounded-xl"></div>)}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-8 text-center group">
-      <div className="absolute inset-0 bg-grid-slate-50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
-
-      <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-        <Lock className="w-8 h-8 text-gray-400" />
-      </div>
-
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-500 max-w-md mx-auto mb-8">{description}</p>
-
-      <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium shadow-lg cursor-not-allowed opacity-80">
-        <Lock className="w-4 h-4" />
-        Module Premium
-      </div>
-
-      <button onClick={onDemoClick} className="absolute top-4 right-4 text-gray-200 hover:text-gray-400">
-        <Eye className="w-4 h-4" />
-      </button>
-    </div>
-  )
-}
+import { ArrowLeft, Search, Filter, Plus, Edit, Wand2, Image as ImageIcon, MessageSquare, Lock, Eye } from 'lucide-react'
 
 export default function AvancementPage() {
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
-  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages' | 'weather'>('timeline')
-  const [demoPremium, setDemoPremium] = useState(false) // Secret toggle
+  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages'>('timeline')
 
-  const [projects, setProjects] = useState<any[]>([]) // Using any to accomodate mixed types during initial dev
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingProject, setEditingProject] = useState<any>(null)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   useEffect(() => {
     fetchProjects()
@@ -117,7 +76,6 @@ export default function AvancementPage() {
     setSelectedProjectId(id)
     setViewMode('detail')
     setCurrentTab('timeline') // Reset tab
-    setDemoPremium(false) // Reset demo
   }
 
   const handleBack = () => {
@@ -297,7 +255,7 @@ export default function AvancementPage() {
             </div>
 
             <div className="flex gap-2">
-              {/* Generation Button */}
+              {/* Generation Button - MASQUÉ (non pertinent)
               {(!selectedProject.project_steps || selectedProject.project_steps.length === 0) && (
                 <button
                   onClick={handleGenerateSteps}
@@ -307,6 +265,7 @@ export default function AvancementPage() {
                   Générer étapes
                 </button>
               )}
+              */}
               <button
                 onClick={() => handleEdit(selectedProject)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-ecotp-green-700 bg-ecotp-green-50 rounded-lg hover:bg-ecotp-green-100 transition-colors"
@@ -342,22 +301,12 @@ export default function AvancementPage() {
               <button
                 onClick={() => setCurrentTab('messages')}
                 className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'messages'
-                    ? 'border-ecotp-green-500 text-ecotp-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-ecotp-green-500 text-ecotp-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
                 <MessageSquare className="w-4 h-4" />
                 Messagerie
-              </button>
-              <button
-                onClick={() => setCurrentTab('weather')}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'weather'
-                    ? 'border-ecotp-green-500 text-ecotp-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-              >
-                <CloudSun className="w-4 h-4" />
-                Météo (Premium)
               </button>
             </nav>
           </div>
@@ -377,27 +326,15 @@ export default function AvancementPage() {
             )}
 
             {currentTab === 'photos' && (
-              <PremiumTeaser
-                title="Galerie Chantier"
-                description="Permettez à vos clients de suivre l'évolution de leur chantier en images, étape par étape. Un gage de confiance absolu."
-                icon={ImageIcon}
-                isUnlocked={demoPremium}
-                onDemoClick={() => setDemoPremium(!demoPremium)}
-              />
+              <PhotoGallery projectId={selectedProjectId || ''} />
             )}
 
             {currentTab === 'messages' && (
-              <PremiumTeaser
-                title="Messagerie Contextuelle"
-                description="Centralisez tous les échanges liés à ce chantier. Fini les SMS perdus, gardez une trace professionnelle de chaque décision."
-                icon={MessageSquare}
-                isUnlocked={demoPremium}
-                onDemoClick={() => setDemoPremium(!demoPremium)}
+              <Messaging
+                projectId={selectedProjectId || ''}
+                clientId={selectedProject.client_id}
+                clientName={selectedProject.client?.name}
               />
-            )}
-
-            {currentTab === 'weather' && (
-              <PremiumCard />
             )}
           </div>
         </div>

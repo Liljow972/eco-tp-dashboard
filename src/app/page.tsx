@@ -9,16 +9,15 @@ export default function LandingPage() {
       {/* Navigation - Glass effect */}
       <nav className="fixed top-0 w-full z-50 px-4 py-4 md:px-6">
         <div className="glass-panel rounded-2xl max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="relative w-10 h-10 overflow-hidden rounded-lg">
+          <div className="flex items-center">
+            <div className="relative overflow-hidden" style={{ width: '9rem', height: '9rem' }}>
               <Image
                 src="/LOGO_ECO_TP-05.png"
                 alt="Eco TP Logo"
                 fill
-                className="object-cover"
+                className="object-contain"
               />
             </div>
-            <span className="text-xl font-bold text-ecotp-green-900 tracking-tight">Eco TP</span>
           </div>
           <div className="hidden md:flex items-center space-x-8">
             <Link href="#features" className="text-ecotp-green-800 hover:text-ecotp-green-600 font-medium transition-colors">Solutions</Link>

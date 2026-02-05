@@ -3,57 +3,16 @@ import { useEffect, useState } from 'react'
 import { AuthService } from '@/lib/auth'
 import ProjectTimeline, { Project, TimelineStep } from '@/components/ProjectTimeline'
 import { supabase } from '@/lib/supabase'
-import { Image as ImageIcon, MessageSquare, Lock, Eye, CloudSun } from 'lucide-react'
-import PremiumCard from '@/components/premium/PremiumCard'
-
-// Teaser Component (Client Version)
-const PremiumTeaser = ({ title, description, icon: Icon, onDemoClick, isUnlocked }: any) => {
-  if (isUnlocked) {
-    return (
-      <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center animate-fade-in">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-ecotp-green-400 to-ecotp-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-ecotp-green-200">
-          <Icon className="w-8 h-8 text-white" />
-        </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">{title} (Aperçu)</h3>
-        <p className="text-gray-500 mb-6">Demandez l'activation de ce module à votre chef de chantier.</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 opacity-50 pointer-events-none select-none">
-          {/* Fake Content */}
-          {[1, 2, 3].map(i => <div key={i} className="aspect-square bg-gray-100 rounded-xl"></div>)}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-8 text-center group">
-      <div className="absolute inset-0 bg-grid-slate-50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
-
-      <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-        <Lock className="w-8 h-8 text-gray-400" />
-      </div>
-
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-500 max-w-md mx-auto mb-8">{description}</p>
-
-      <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium shadow-lg cursor-not-allowed opacity-80">
-        <Lock className="w-4 h-4" />
-        Option non activée
-      </div>
-
-      <button onClick={onDemoClick} className="absolute top-4 right-4 text-gray-200 hover:text-gray-400">
-        <Eye className="w-4 h-4" />
-      </button>
-    </div>
-  )
-}
+import { Image as ImageIcon, MessageSquare } from 'lucide-react'
+import PhotoGallery from '@/components/PhotoGallery'
+import Messaging from '@/components/Messaging'
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
-  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages' | 'weather'>('timeline')
-  const [demoPremium, setDemoPremium] = useState(false)
+  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages'>('timeline')
 
   useEffect(() => {
     fetchClientProjects()
@@ -173,16 +132,6 @@ export default function ProjectsPage() {
             <MessageSquare className="w-4 h-4" />
             Messagerie
           </button>
-          <button
-            onClick={() => setCurrentTab('weather')}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'weather'
-              ? 'border-ecotp-green-500 text-ecotp-green-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-          >
-            <CloudSun className="w-4 h-4" />
-            Météo (Premium)
-          </button>
         </nav>
       </div>
 
@@ -200,31 +149,14 @@ export default function ProjectsPage() {
         )}
 
         {currentTab === 'photos' && (
-          <PremiumTeaser
-            title="Galerie Chantier"
-            description="Cette option n'est pas activée sur votre dossier. Suivez l'évolution visuelle de votre chantier."
-            icon={ImageIcon}
-            isUnlocked={demoPremium}
-            onDemoClick={() => setDemoPremium(!demoPremium)}
-          />
+          <PhotoGallery projectId={selectedProjectId} />
         )}
 
         {currentTab === 'messages' && (
-          <PremiumTeaser
-            title="Messagerie Directe"
-            description="Cette option n'est pas activée. Communiquez en direct avec votre chef de chantier ici."
-            icon={MessageSquare}
-            isUnlocked={demoPremium}
-            onDemoClick={() => setDemoPremium(!demoPremium)}
-          />
-        )}
-
-        {currentTab === 'weather' && (
-          <PremiumCard
-            title="Météo Predictive"
-            description="Optimisez vos chantiers avec notre module d'analyse prédictive. Anticipez les retards météo et les coûts."
-            buttonText="Passer en Premium"
-            href="/premium-client-info" // Or modal, for now just reuse or custom
+          <Messaging
+            projectId={selectedProjectId}
+            clientId={selectedProject.client_id}
+            clientName={selectedProject.profiles?.name}
           />
         )}
       </div>

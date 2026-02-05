@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { AuthService } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
+import ClientDashboard from '@/components/ClientDashboard'
 
 // Types
 interface KPIStats {
@@ -50,6 +51,13 @@ export default function DashboardPage() {
     const user = AuthService.getCurrentUser()
     setUserName(user?.name || 'Utilisateur')
     setIsAdmin(user?.role === 'admin')
+
+    // Si client, on ne charge pas les stats admin
+    if (user?.role !== 'admin') {
+      setIsLoading(false)
+      return
+    }
+
     fetchDashboardData()
   }, [])
 
@@ -94,6 +102,11 @@ export default function DashboardPage() {
   // Fallback / Loading State
   if (isLoading) {
     return <div className="p-8 text-center text-gray-500 animate-pulse">Mise à jour du tableau de bord...</div>
+  }
+
+  // Si client, afficher le dashboard client
+  if (!isAdmin) {
+    return <ClientDashboard />
   }
 
   return (
@@ -278,35 +291,55 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="bg-gradient-to-br from-ecotp-green-900 to-ecotp-green-800 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
-          <div className="relative z-10 h-full flex flex-col justify-between">
-            <div>
-              <h3 className="text-xl font-bold mb-2">Passez au niveau supérieur</h3>
-              <p className="text-ecotp-green-100 text-sm max-w-sm">
-                Optimisez vos chantiers avec notre module d'analyse prédictive. Anticipez les retards météo et les coûts.
-              </p>
-            </div>
-
-            <div className="mt-8 flex justify-center">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl w-full max-w-xs">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-green-200">System Status</span>
-                </div>
-                <div className="flex justify-between items-end">
-                  <span className="text-3xl font-bold">98%</span>
-                  <span className="text-xs text-green-200 mb-1">Efficacité Opérationnelle</span>
-                </div>
-              </div>
-            </div>
-
-            <button className="mt-6 w-full py-3 bg-white text-ecotp-green-900 font-bold rounded-xl hover:bg-ecotp-green-50 transition-colors shadow-lg">
-              Découvrir les outils Premium
-            </button>
+        {/* Projets Récents */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-900">Projets Récents</h3>
+            <a href="/avancement" className="text-sm text-ecotp-green-600 hover:text-ecotp-green-700 font-medium flex items-center gap-1">
+              Voir tout
+              <ArrowUpRight className="w-4 h-4" />
+            </a>
           </div>
+
+          {recentProjects.length > 0 ? (
+            <div className="space-y-4">
+              {recentProjects.map((project) => (
+                <div key={project.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-ecotp-green-200 hover:bg-ecotp-green-50/30 transition-all cursor-pointer group">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 group-hover:text-ecotp-green-700 transition-colors">{project.name}</h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {project.start_date ? new Date(project.start_date).toLocaleDateString('fr-FR') : 'Date non définie'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900">{project.progress || 0}%</div>
+                      <div className="w-24 h-2 bg-gray-100 rounded-full mt-1">
+                        <div
+                          className="h-2 bg-ecotp-green-500 rounded-full transition-all"
+                          style={{ width: `${project.progress || 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      project.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                      {project.status === 'in_progress' ? 'En cours' :
+                        project.status === 'completed' ? 'Terminé' :
+                          'En attente'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>Aucun projet récent</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
