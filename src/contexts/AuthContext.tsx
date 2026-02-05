@@ -16,12 +16,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+let supabaseClientInstance: ReturnType<typeof createSupabaseClient> | null = null
+
+function getSupabaseClient() {
+  if (!supabaseClientInstance) {
+    supabaseClientInstance = createSupabaseClient()
+  }
+  return supabaseClientInstance
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createSupabaseClient()
+  const supabase = getSupabaseClient()
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -77,7 +86,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session)
         
         if (session) {
           setSession(session)
@@ -97,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase.auth])
+  }, [])
 
   const value = {
     user,
