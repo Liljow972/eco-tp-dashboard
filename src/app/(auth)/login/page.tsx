@@ -71,8 +71,15 @@ const LoginPage = () => {
       if (error || !user) {
         setError(error || 'Identifiants de démo invalides')
       } else {
-        // Redirection immédiate sans message
-        router.push('/dashboard')
+        // Stocker l'utilisateur dans localStorage
+        localStorage.setItem('auth_user', JSON.stringify(user))
+
+        // Rediriger selon le rôle
+        if (user.role === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/client')
+        }
       }
     } catch (err) {
       console.error('Error in quickLogin:', err)

@@ -11,7 +11,7 @@ const AuthCallbackPage = () => {
     const handleAuthCallback = async () => {
       try {
         const { data, error } = await supabase.auth.getSession()
-        
+
         if (error) {
           console.error('Erreur lors de la récupération de la session:', error)
           router.push('/?error=auth_callback_error')
@@ -20,7 +20,7 @@ const AuthCallbackPage = () => {
 
         if (data.session?.user) {
           const user = data.session.user
-          
+
           // Créer ou récupérer le profil utilisateur
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -53,9 +53,13 @@ const AuthCallbackPage = () => {
           }
 
           localStorage.setItem('auth_user', JSON.stringify(authUser))
-          
-          // Rediriger vers le dashboard unifié; l'UI s'adapte au rôle
-          router.push('/dashboard')
+
+          // Rediriger selon le rôle
+          if (profile?.role === 'admin') {
+            router.push('/admin')
+          } else {
+            router.push('/client')
+          }
         } else {
           // Pas de session, rediriger vers la page d'accueil
           router.push('/')
