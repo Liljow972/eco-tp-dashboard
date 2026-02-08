@@ -31,26 +31,68 @@ const navItems = {
 export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setIsAdmin(AuthService.isAdmin())
-  }, [])
+    const loadUser = async () => {
+      try {
+        const user = await AuthService.getCurrentUser()
+        if (user) {
+          setIsAdmin(user.role === 'admin')
+          setCurrentUser(user)
+        } else {
+          // Fallback: Check pathname to avoid flickering wrong menu
+          if (pathname.startsWith('/admin') || pathname.startsWith('/avancement') || pathname.startsWith('/collaboration')) {
+            setIsAdmin(true)
+          }
+        }
+      } catch (e) {
+        console.error("Sidebar load error", e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadUser()
+  }, [pathname])
 
-  const items = isAdmin ? navItems.admin : navItems.common
+  // Menu items config based on role
+  const items = (isAdmin || pathname.startsWith('/admin')) ? [
+    { href: '/admin', label: 'Tableau de bord', icon: PieChart },
+    { href: '/avancement', label: 'Suivi Chantier', icon: Activity },
+    { href: '/collaboration', label: 'Collaboration', icon: Users },
+    { href: '/files', label: 'GED', icon: FileText },
+    { href: '/settings', label: 'Paramètres', icon: Settings },
+  ] : [
+    { href: '/client', label: 'Vue d\'ensemble', icon: Home },
+    { href: '/projects', label: 'Projets', icon: LayoutGrid },
+    { href: '/files', label: 'Documents', icon: Files },
+    { href: '/settings', label: 'Paramètres', icon: Settings },
+  ]
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   return (
     <>
-      <div className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity md:hidden ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
+      <div className={`fixed inset-0 z-40 md:hidden bg-gray-900/50 backdrop-blur-sm transition-opacity ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
 
-      <aside className={`fixed top-0 left-0 z-50 h-screen w-64 bg-ecotp-green-900 text-white transition-transform duration-300 ease-in-out md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed top-0 left-0 z-50 h-screen w-64 bg-[#0B2318] text-white transition-transform duration-300 ease-in-out md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo Section */}
-        <div className="flex h-32 items-center justify-center px-6 border-b border-ecotp-green-800/50 bg-ecotp-green-900/50 backdrop-blur-md">
-          <div className="relative flex-shrink-0" style={{ width: '9rem', height: '9rem' }}>
+        <div className="flex h-32 items-center justify-center px-6 border-b border-[#1A3828]">
+          <div className="relative w-36 h-36">
             <Image
               src="/LOGO_ECO_TP-06.png"
               alt="Eco TP"
               fill
               className="object-contain"
+              priority
             />
           </div>
         </div>
@@ -66,11 +108,11 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                 href={item.href}
                 onClick={onClose}
                 className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
-                  ? 'bg-ecotp-green-500 text-white shadow-lg shadow-ecotp-green-900/20'
-                  : 'text-ecotp-green-100 hover:bg-ecotp-green-800/50 hover:text-white'
+                  ? 'bg-[#1A3828] text-white shadow-lg shadow-black/10'
+                  : 'text-gray-400 hover:bg-[#1A3828]/50 hover:text-white'
                   }`}
               >
-                <Icon className={`mr-3 h-5 w-5 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-ecotp-green-300 group-hover:text-white'}`} />
+                <Icon className={`mr-3 h-5 w-5 transition-transform group-hover:scale-110 ${isActive ? 'text-[#4ADE80]' : 'text-gray-500 group-hover:text-[#4ADE80]'}`} />
                 {item.label}
               </Link>
             )
@@ -78,15 +120,15 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
         </nav>
 
         {/* User / Footer */}
-        <div className="border-t border-ecotp-green-800/50 p-4">
-          <div className="rounded-2xl bg-gradient-to-br from-ecotp-green-800 to-ecotp-green-900 p-4 border border-ecotp-green-700/50">
+        <div className="border-t border-[#1A3828] p-4">
+          <div className="rounded-2xl bg-[#0F2E20] p-4 border border-[#1A3828]">
             <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-full bg-ecotp-green-700 flex items-center justify-center border-2 border-ecotp-green-600">
-                <span className="text-sm font-bold">JD</span>
+              <div className="h-10 w-10 rounded-full bg-[#1A3828] flex items-center justify-center border border-[#2D5B42] text-[#4ADE80]">
+                <span className="text-sm font-bold">{currentUser ? getInitials(currentUser.name) : '...'}</span>
               </div>
               <div className="overflow-hidden">
-                <p className="text-sm font-medium truncate">Jean Dupont</p>
-                <p className="text-xs text-ecotp-green-300 truncate">{isAdmin ? 'Administrateur' : 'Client'}</p>
+                <p className="text-sm font-medium truncate text-white">{currentUser?.name || 'Chargement...'}</p>
+                <p className="text-xs text-gray-400 truncate">{isAdmin ? 'Administrateur' : 'Client'}</p>
               </div>
             </div>
             <button
@@ -94,7 +136,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                 await AuthService.signOut()
                 window.location.href = '/login'
               }}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-black/20 hover:bg-black/30 py-2 text-xs font-medium text-ecotp-green-100 transition-colors"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-black/20 hover:bg-black/30 py-2 text-xs font-medium text-gray-400 hover:text-white transition-colors"
             >
               <LogOut size={14} />
               Déconnexion
@@ -102,8 +144,8 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
           </div>
 
           <div className="mt-4 text-center">
-            <p className="text-[10px] text-ecotp-green-400/60 font-medium">
-              Built by <a href="https://lj-design.fr" target="_blank" rel="noopener noreferrer" className="hover:text-ecotp-green-300 transition-colors tracking-wide">LJ DESIGN</a>
+            <p className="text-[10px] text-gray-600 font-medium">
+              Built by <a href="https://lj-design.fr" target="_blank" rel="noopener noreferrer" className="hover:text-[#4ADE80] transition-colors tracking-wide">LJ DESIGN</a>
             </p>
           </div>
         </div>
