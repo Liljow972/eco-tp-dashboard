@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, FormEvent } from 'react'
-import { createSupabaseClient } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { AuthService } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Leaf } from 'lucide-react'
@@ -16,7 +16,7 @@ const LoginPage = () => {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const supabase = createSupabaseClient()
+  // const supabase = createSupabaseClient() // Removed
   const router = useRouter()
 
   useEffect(() => {
@@ -234,10 +234,16 @@ const LoginPage = () => {
                     type="button"
                     onClick={async () => {
                       try {
+                        if (!supabase || !supabase.auth) {
+                          console.error('Erreur: Client Supabase non initialisé')
+                          setError('Erreur de configuration. Veuillez rafraîchir la page.')
+                          return
+                        }
+
                         const { error } = await supabase.auth.signInWithOAuth({
                           provider: 'google',
                           options: {
-                            redirectTo: `${window.location.origin}/auth/callback-success`,
+                            redirectTo: `${window.location.origin}/auth/callback`,
                             queryParams: {
                               access_type: 'offline',
                               prompt: 'consent',
