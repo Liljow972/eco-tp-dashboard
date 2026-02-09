@@ -60,26 +60,34 @@ const LoginPage = () => {
   }
 
   const quickLogin = async (creds: { email: string; password: string }) => {
-    setEmail(creds.email)
-    setPassword(creds.password)
-    setLoading(true)
-    setError('')
-    setMessage('')
-
     try {
+      // 1. Force Logout to clean state
+      await supabase.auth.signOut()
+      localStorage.removeItem('auth_user')
+
+      setEmail(creds.email)
+      setPassword(creds.password)
+      setLoading(true)
+      setError('')
+      setMessage('')
+
+      // 2. Attempt Login
       const { user, error } = await AuthService.signInWithEmail(creds.email, creds.password)
+
+      console.log("QuickLogin Result:", { user, error })
+
       if (error || !user) {
-        setError(error || 'Identifiants de démo invalides')
+        setError(error || 'Identifiants de démo invalides. Avez-vous créé ces comptes ?')
       } else {
         // Stocker l'utilisateur dans localStorage
         localStorage.setItem('auth_user', JSON.stringify(user))
 
-        // Rediriger selon le rôle
-        if (user.role === 'admin') {
-          router.push('/admin')
-        } else {
-          router.push('/client')
-        }
+        // Rediriger selon le rôle avec bypass cache
+        const target = user.role === 'admin' ? '/admin' : '/client'
+        console.log(`Redirecting to ${target} with role ${user.role}`)
+
+        // Use window.location to strictly reload context
+        window.location.href = `${target}?ts=${Date.now()}`
       }
     } catch (err) {
       console.error('Error in quickLogin:', err)
@@ -286,12 +294,31 @@ const LoginPage = () => {
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => quickLogin({ email: 'admin@ecotp.test', password: 'admin123' })}
+                    onClick={async () => {
+                      try {
+                        setLoading(true)
+                        const { error } = await supabase.auth.signInWithOAuth({
+                          provider: 'google',
+                          options: {
+                            redirectTo: `${window.location.origin}/auth/callback`,
+                            queryParams: {
+                              access_type: 'offline',
+                              prompt: 'consent',
+                            }
+                          }
+                        })
+                        if (error) throw error
+                      } catch (err) {
+                        console.error("Google Login Error:", err)
+                        setError("Erreur connexion Google")
+                        setLoading(false)
+                      }
+                    }}
                     disabled={loading}
                     data-testid="quick-login-admin"
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ecotp-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:shadow transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-transparent disabled:opacity-50 active:translate-y-0"
                   >
-                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Admin
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Admin (Google)
                   </button>
                   <button
                     type="button"
@@ -300,7 +327,7 @@ const LoginPage = () => {
                     data-testid="quick-login-client"
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ecotp-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 hover:shadow transition-all duration-300 hover:-translate-y-0.5 focus-visible:ring-transparent disabled:opacity-50 active:translate-y-0"
                   >
-                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Client
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Client (Démo)
                   </button>
                 </div>
               </div>
