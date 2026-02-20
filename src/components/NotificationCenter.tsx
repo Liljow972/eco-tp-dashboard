@@ -261,8 +261,8 @@ export default function NotificationCenter() {
                         onClick={() => setIsOpen(false)}
                     />
 
-                    {/* Panel */}
-                    <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 animate-fade-in-down">
+                    {/* Panel — fixe sur mobile, absolu sur desktop */}
+                    <div className="fixed sm:absolute inset-x-2 top-20 sm:top-12 sm:inset-x-auto sm:right-0 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 animate-fade-in-down max-h-[80vh] flex flex-col overflow-hidden">
                         {/* Header */}
                         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                             <div>
@@ -274,7 +274,8 @@ export default function NotificationCenter() {
                             {unreadCount > 0 && (
                                 <button
                                     onClick={markAllAsRead}
-                                    className="text-xs text-ecotp-green-600 hover:text-ecotp-green-700 font-medium"
+                                    className="text-xs font-medium transition-opacity hover:opacity-70"
+                                    style={{ color: '#524f3d' }}
                                 >
                                     Tout marquer comme lu
                                 </button>
@@ -282,7 +283,7 @@ export default function NotificationCenter() {
                         </div>
 
                         {/* Liste */}
-                        <div className="max-h-96 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto min-h-0">
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center text-gray-500">
                                     <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -344,8 +345,9 @@ export default function NotificationCenter() {
 
                         {/* Footer */}
                         {notifications.length > 0 && (
-                            <div className="p-3 border-t border-gray-100 text-center">
-                                <button className="text-sm text-ecotp-green-600 hover:text-ecotp-green-700 font-medium">
+                            <div className="p-3 border-t border-gray-100 text-center shrink-0">
+                                <button className="text-sm font-medium transition-opacity hover:opacity-70"
+                                    style={{ color: '#524f3d' }}>
                                     Voir toutes les notifications
                                 </button>
                             </div>
