@@ -8,6 +8,29 @@ interface FileUploaderProps {
   onUploaded?: () => void
 }
 
+// Mappe le MIME type vers une valeur acceptée par la contrainte documents_type_check
+const getDocType = (mimeType: string, fileName: string): string => {
+  if (!mimeType) return 'document'
+  if (mimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf'))
+    return 'pdf'
+  if (mimeType.startsWith('image/'))
+    return 'image'
+  if (
+    mimeType.includes('word') ||
+    mimeType.includes('document') ||
+    fileName.toLowerCase().match(/\.(doc|docx|odt|txt|rtf)$/)
+  )
+    return 'document'
+  if (
+    mimeType.includes('excel') ||
+    mimeType.includes('spreadsheet') ||
+    fileName.toLowerCase().match(/\.(xls|xlsx|csv|ods)$/)
+  )
+    return 'document'
+  // Valeur par défaut safe
+  return 'document'
+}
+
 export default function FileUploader({ onUploaded }: FileUploaderProps) {
   const [uploading, setUploading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -15,6 +38,7 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+  const PRIMARY = '#524f3d'
 
   const processFile = async (file: File) => {
     setUploading(true)
@@ -28,7 +52,7 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
     }
 
     try {
-      // 1. Session utilisateur (non-bloquant)
+      // 1. Session utilisateur
       const { data: { session } } = await supabase.auth.getSession()
       const userId = session?.user?.id || (() => {
         try { return JSON.parse(localStorage.getItem('auth_user') || '{}').id } catch { return null }
@@ -40,17 +64,17 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
         return
       }
 
-      // 2. Générer le chemin de stockage
+      // 2. Chemin de stockage sécurisé
       const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
       const filePath = `${userId}/${Date.now()}-${safeFileName}`
 
-      // 3. Upload vers Supabase Storage (avec timeout 30s)
+      // 3. Upload Storage avec timeout 30s
       const uploadPromise = supabase.storage
         .from('documents')
         .upload(filePath, file, { cacheControl: '3600', upsert: false })
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Upload timeout — vérifiez votre connexion')), 30000)
+        setTimeout(() => reject(new Error('Délai dépassé — vérifiez votre connexion')), 30000)
       )
 
       const { error: uploadError } = await Promise.race([uploadPromise, timeoutPromise]) as any
@@ -61,10 +85,11 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
       const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath)
       const publicUrl = urlData?.publicUrl || ''
 
-      // 5. Insérer en BDD - essai avec colonnes complètes d'abord, fallback minimal
-      let dbError = null
+      // 5. Type document mappé correctement (évite la contrainte documents_type_check)
+      const docType = getDocType(file.type, file.name)
 
-      // Tentative 1 : colonnes complètes (après FIX_DOCUMENTS_COLUMNS.sql)
+      // 6. Insertion BDD — tentative complète
+      let dbError = null
       const { error: err1 } = await supabase
         .from('documents')
         .insert({
@@ -74,12 +99,12 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
           file_url: publicUrl,
           file_size: file.size,
           mime_type: file.type || 'application/octet-stream',
-          type: file.type?.split('/')[0] || 'document',
+          type: docType,
           uploaded_by: userId,
         })
       dbError = err1
 
-      // Tentative 2 fallback : colonnes minimales (schéma original uniquement)
+      // 7. Fallback : colonnes minimales (si certaines colonnes manquent)
       if (dbError) {
         console.warn('Insert complet échoué, tentative minimale:', dbError.message)
         const { error: err2 } = await supabase
@@ -89,18 +114,15 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
             file_path: filePath,
             file_size: file.size,
             mime_type: file.type || 'application/octet-stream',
-            type: file.type?.split('/')[0] || 'document',
+            type: docType,
           })
         dbError = err2
       }
 
       if (dbError) {
-        // Nettoyage storage si BDD échoue
+        // Nettoyage du fichier uploadé si BDD échoue
         await supabase.storage.from('documents').remove([filePath]).catch(() => { })
-        throw new Error(
-          `Erreur base de données: ${dbError.message}\n` +
-          `→ Exécutez FIX_DOCUMENTS_COLUMNS.sql dans Supabase SQL Editor`
-        )
+        throw new Error(`Erreur base de données: ${dbError.message}`)
       }
 
       setSuccess(true)
@@ -136,10 +158,24 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
         onClick={() => !uploading && fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${uploading
-            ? 'border-ecotp-green-300 bg-ecotp-green-50 cursor-not-allowed'
-            : 'border-gray-300 hover:border-ecotp-green-500 hover:bg-ecotp-green-50/30 cursor-pointer'
-          } group`}
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer group`}
+        style={
+          uploading
+            ? { borderColor: '#c5bfad', backgroundColor: 'rgba(82,79,61,0.04)', cursor: 'not-allowed' }
+            : { borderColor: '#d4cfc4', backgroundColor: 'transparent' }
+        }
+        onMouseEnter={e => {
+          if (!uploading) {
+            (e.currentTarget as HTMLElement).style.borderColor = PRIMARY
+              ; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(82,79,61,0.04)'
+          }
+        }}
+        onMouseLeave={e => {
+          if (!uploading) {
+            (e.currentTarget as HTMLElement).style.borderColor = '#d4cfc4'
+              ; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'
+          }
+        }}
       >
         <input
           ref={fileInputRef}
@@ -147,16 +183,16 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
           className="hidden"
           onChange={handleFileChange}
           disabled={uploading}
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.odt,.csv"
         />
         {uploading ? (
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-12 h-12 text-ecotp-green-600 animate-spin" />
-            <p className="text-ecotp-green-700 font-medium">Upload en cours...</p>
+            <Loader2 className="w-12 h-12 animate-spin" style={{ color: PRIMARY }} />
+            <p className="font-medium" style={{ color: PRIMARY }}>Upload en cours...</p>
           </div>
         ) : (
           <>
-            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400 group-hover:text-ecotp-green-600 transition-colors" />
+            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400 group-hover:transition-colors" style={{ color: '#b8b09e' }} />
             <p className="text-gray-700 font-medium mb-1">Cliquez ou glissez-déposez</p>
             <p className="text-sm text-gray-500">PDF, Word, Excel, Images (max 10MB)</p>
           </>
@@ -164,24 +200,26 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
       </div>
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-          <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-          <p className="text-green-800 font-medium">✅ Fichier uploadé avec succès !</p>
+        <div className="border rounded-xl p-4 flex items-center gap-3"
+          style={{ backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }}>
+          <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#15803d' }} />
+          <p className="font-medium text-sm" style={{ color: '#15803d' }}>✅ Fichier uploadé avec succès !</p>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="border rounded-xl p-4"
+          style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#dc2626' }} />
             <div className="flex-1">
-              <p className="text-red-800 font-medium text-sm">Erreur upload</p>
-              <p className="text-sm text-red-600 whitespace-pre-line">{error}</p>
+              <p className="font-medium text-sm" style={{ color: '#dc2626' }}>Erreur upload</p>
+              <p className="text-sm whitespace-pre-line mt-1" style={{ color: '#ef4444' }}>{error}</p>
             </div>
             <button
               onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 text-xs underline flex-shrink-0"
-            >
+              className="text-xs underline flex-shrink-0 transition-opacity hover:opacity-70"
+              style={{ color: '#ef4444' }}>
               Fermer
             </button>
           </div>
