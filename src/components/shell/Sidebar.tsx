@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Home, Files, LayoutGrid, Settings, Activity, Users, LogOut, FileText, PieChart } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { AuthService } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 
 type SidebarProps = {
   open?: boolean
@@ -30,31 +30,41 @@ const navItems = {
 
 export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname()
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(() =>
+    pathname.startsWith('/admin') || pathname.startsWith('/avancement') || pathname.startsWith('/collaboration')
+  )
   const [currentUser, setCurrentUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const user = await AuthService.getCurrentUser()
-        if (user) {
-          setIsAdmin(user.role === 'admin')
-          setCurrentUser(user)
+        // getSession() est instantané (cache local)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const meta = session.user.user_metadata
+          const role = meta?.role || (pathname.startsWith('/admin') ? 'admin' : 'client')
+          // Pré-remplir depuis les metadata (instantané, pas de réseau)
+          setIsAdmin(role === 'admin')
+          setCurrentUser({ name: meta?.name || session.user.email?.split('@')[0] || 'Utilisateur', role })
+
+          // Enrichissement depuis la BDD en arrière-plan (sans bloquer)
+          supabase.from('profiles').select('name, role').eq('id', session.user.id).single()
+            .then(({ data }) => {
+              if (data) {
+                setIsAdmin(data.role === 'admin')
+                setCurrentUser({ name: data.name || meta?.name, role: data.role })
+              }
+            })
         } else {
-          // Fallback: Check pathname to avoid flickering wrong menu
-          if (pathname.startsWith('/admin') || pathname.startsWith('/avancement') || pathname.startsWith('/collaboration')) {
-            setIsAdmin(true)
-          }
+          setCurrentUser({ name: 'Invité', role: 'client' })
         }
       } catch (e) {
-        console.error("Sidebar load error", e)
-      } finally {
-        setLoading(false)
+        console.error('Sidebar load error', e)
       }
     }
     loadUser()
-  }, [pathname])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Menu items config based on role
   const items = (isAdmin || pathname.startsWith('/admin')) ? [
@@ -124,17 +134,30 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
           <div className="rounded-2xl bg-[#0F2E20] p-4 border border-[#1A3828]">
             <div className="flex items-center gap-3 mb-3">
               <div className="h-10 w-10 rounded-full bg-[#1A3828] flex items-center justify-center border border-[#2D5B42] text-[#4ADE80]">
-                <span className="text-sm font-bold">{currentUser ? getInitials(currentUser.name) : '...'}</span>
+                <span className="text-sm font-bold">{currentUser ? getInitials(currentUser.name) : '?'}</span>
               </div>
               <div className="overflow-hidden">
-                <p className="text-sm font-medium truncate text-white">{currentUser?.name || 'Chargement...'}</p>
-                <p className="text-xs text-gray-400 truncate">{isAdmin ? 'Administrateur' : 'Client'}</p>
+                {currentUser ? (
+                  <>
+                    <p className="text-sm font-medium truncate text-white">{currentUser.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{isAdmin ? 'Administrateur' : 'Client'}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-3 w-24 bg-[#1A3828] rounded animate-pulse mb-1" />
+                    <div className="h-2 w-16 bg-[#1A3828] rounded animate-pulse" />
+                  </>
+                )}
               </div>
             </div>
             <button
-              onClick={async () => {
-                await AuthService.signOut()
+              onClick={() => {
+                // Navigate immediately (don't block on signOut)
+                localStorage.removeItem('auth_user')
+                localStorage.removeItem('rememberMe')
                 window.location.href = '/login'
+                // Fire & forget
+                supabase.auth.signOut().catch(() => { })
               }}
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-black/20 hover:bg-black/30 py-2 text-xs font-medium text-gray-400 hover:text-white transition-colors"
             >

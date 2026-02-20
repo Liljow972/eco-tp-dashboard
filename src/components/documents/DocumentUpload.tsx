@@ -19,11 +19,11 @@ interface UploadFile {
   error?: string;
 }
 
-export default function DocumentUpload({ 
-  clientId, 
-  projectId, 
+export default function DocumentUpload({
+  clientId,
+  projectId,
   onUploadComplete,
-  className = '' 
+  className = ''
 }: DocumentUploadProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -32,23 +32,76 @@ export default function DocumentUpload({
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
+  // Constantes de validation
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'image/jpeg',
+    'image/png',
+    'image/gif'
+  ];
+
+  // Fonction de validation
+  const validateFile = (file: File): { valid: boolean; error?: string } => {
+    // Vérifier la taille
+    if (file.size > MAX_FILE_SIZE) {
+      return {
+        valid: false,
+        error: `${file.name} est trop volumineux (max 10MB)`
+      };
+    }
+
+    // Vérifier le type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return {
+        valid: false,
+        error: `${file.name}: type de fichier non autorisé`
+      };
+    }
+
+    return { valid: true };
+  };
+
   const handleFileSelect = (selectedFiles: FileList | null) => {
     if (!selectedFiles) return;
 
-    const newFiles: UploadFile[] = Array.from(selectedFiles).map(file => ({
-      file,
-      id: generateId(),
-      progress: 0,
-      status: 'pending'
-    }));
+    const validFiles: UploadFile[] = [];
+    const errors: string[] = [];
 
-    setFiles(prev => [...prev, ...newFiles]);
+    Array.from(selectedFiles).forEach(file => {
+      const validation = validateFile(file);
+
+      if (validation.valid) {
+        validFiles.push({
+          file,
+          id: generateId(),
+          progress: 0,
+          status: 'pending'
+        });
+      } else {
+        errors.push(validation.error!);
+      }
+    });
+
+    // Afficher les erreurs
+    if (errors.length > 0) {
+      alert(errors.join('\n'));
+    }
+
+    // Ajouter les fichiers valides
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+    }
   };
 
   const uploadFile = async (uploadFile: UploadFile) => {
     try {
-      setFiles(prev => prev.map(f => 
-        f.id === uploadFile.id 
+      setFiles(prev => prev.map(f =>
+        f.id === uploadFile.id
           ? { ...f, status: 'uploading', progress: 0 }
           : f
       ));
@@ -71,8 +124,8 @@ export default function DocumentUpload({
 
       // Simuler la progression
       for (let i = 0; i <= 100; i += 10) {
-        setFiles(prev => prev.map(f => 
-          f.id === uploadFile.id 
+        setFiles(prev => prev.map(f =>
+          f.id === uploadFile.id
             ? { ...f, progress: i }
             : f
         ));
@@ -84,6 +137,17 @@ export default function DocumentUpload({
         .from('documents')
         .getPublicUrl(filePath);
 
+      // Récupérer l'utilisateur (localStorage non-bloquant)
+      let currentUserId: string | null = null
+      try {
+        const stored = localStorage.getItem('auth_user')
+        if (stored) currentUserId = JSON.parse(stored).id
+      } catch { }
+      if (!currentUserId) {
+        const { data: { session } } = await supabase.auth.getSession()
+        currentUserId = session?.user?.id || null
+      }
+
       // Enregistrer les métadonnées en base
       const { data: documentData, error: dbError } = await supabase
         .from('documents')
@@ -91,11 +155,13 @@ export default function DocumentUpload({
           client_id: clientId,
           project_id: projectId || null,
           name: uploadFile.file.name,
+          label: uploadFile.file.name,
           file_path: filePath,
           file_url: urlData.publicUrl,
           file_size: uploadFile.file.size,
           mime_type: uploadFile.file.type,
-          uploaded_by: 'admin' // À remplacer par l'utilisateur connecté
+          type: uploadFile.file.type?.split('/')[0] || 'document',
+          uploaded_by: currentUserId,
         })
         .select()
         .single();
@@ -104,8 +170,8 @@ export default function DocumentUpload({
         throw dbError;
       }
 
-      setFiles(prev => prev.map(f => 
-        f.id === uploadFile.id 
+      setFiles(prev => prev.map(f =>
+        f.id === uploadFile.id
           ? { ...f, status: 'success', progress: 100 }
           : f
       ));
@@ -117,8 +183,8 @@ export default function DocumentUpload({
     } catch (error) {
       console.error('Erreur upload:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      setFiles(prev => prev.map(f => 
-        f.id === uploadFile.id 
+      setFiles(prev => prev.map(f =>
+        f.id === uploadFile.id
           ? { ...f, status: 'error', error: errorMessage }
           : f
       ));
@@ -160,11 +226,10 @@ export default function DocumentUpload({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-          isDragOver 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${isDragOver
+          ? 'border-blue-500 bg-blue-50'
+          : 'border-gray-300 hover:border-gray-400'
+          }`}
       >
         <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -228,7 +293,7 @@ export default function DocumentUpload({
                   </button>
                 </div>
               </div>
-              
+
               {fileItem.status === 'uploading' && (
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -237,13 +302,13 @@ export default function DocumentUpload({
                   ></div>
                 </div>
               )}
-              
+
               {fileItem.status === 'error' && fileItem.error && (
                 <p className="text-sm text-red-600 mt-1">{fileItem.error}</p>
               )}
             </div>
           ))}
-          
+
           {files.some(f => f.status === 'pending') && (
             <button
               onClick={() => {

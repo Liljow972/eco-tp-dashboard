@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from 'react'
 import { Calendar, ChevronDown, CheckCircle, Circle, Play, Truck, Recycle, AlertCircle, RefreshCw } from 'lucide-react'
+import { createSupabaseClient } from '@/lib/supabase'
 
 // Types
 export interface Project {
@@ -55,6 +57,53 @@ export default function ProjectTimeline({
     onStepClick,
     isEditable = false
 }: ProjectTimelineProps) {
+    const supabase = createSupabaseClient();
+    const [updating, setUpdating] = useState(false);
+
+    // Fonction pour gérer le click sur une étape
+    const handleStepClick = async (step: TimelineStep) => {
+        if (!isEditable || updating) return;
+
+        setUpdating(true);
+
+        try {
+            // Déterminer le prochain statut
+            const nextStatus =
+                step.status === 'pending' ? 'in_progress'
+                    : step.status === 'in_progress' ? 'completed'
+                        : 'pending';
+
+            console.log(`🔄 Changement statut: ${step.status} → ${nextStatus}`);
+
+            // Mettre à jour en base
+            const { error } = await supabase
+                .from('project_steps')
+                .update({
+                    status: nextStatus,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', step.id);
+
+            if (error) {
+                console.error('❌ Erreur mise à jour statut:', error);
+                alert('Erreur lors de la mise à jour du statut');
+                return;
+            }
+
+            console.log('✅ Statut mis à jour avec succès');
+
+            // Callback pour rafraîchir
+            if (onStepClick) {
+                onStepClick(step);
+            }
+
+        } catch (err) {
+            console.error('❌ Erreur:', err);
+            alert('Une erreur est survenue');
+        } finally {
+            setUpdating(false);
+        }
+    };
 
     // Use provided steps or default if empty (legacy support)
     const timelineSteps = steps.length > 0 ? steps : DEFAULT_STEPS
@@ -161,10 +210,11 @@ export default function ProjectTimeline({
                                 <div
                                     key={step.id || idx}
                                     className={`relative flex items-start gap-4 group ${isEditable ? 'cursor-pointer hover:bg-gray-50 p-2 rounded-lg -ml-2 transition-colors' : ''}`}
-                                    onClick={() => isEditable && onStepClick && onStepClick(step)}
+                                    onClick={() => handleStepClick(step)}
                                 >
                                     <div className={`
                             relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-4 transition-colors duration-300
+                            ${updating ? 'opacity-50 cursor-wait' : ''}
                             ${isCompleted ? 'border-ecotp-green-100 bg-ecotp-green-500' : isInProgress ? 'border-blue-100 bg-white ring-2 ring-blue-500' : 'border-gray-50 bg-gray-100 text-gray-400'}
                          `}>
                                         <Icon className={`h-5 w-5 ${isCompleted ? 'text-white' : isInProgress ? 'text-blue-600 animate-spin-slow' : 'text-gray-400'}`} />

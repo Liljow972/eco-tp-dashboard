@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { AuthService } from '@/lib/auth'
 import ProjectTimeline, { Project, TimelineStep } from '@/components/ProjectTimeline'
 import Modal from '@/components/ui/Modal'
 import ProjectForm from '@/components/admin/ProjectForm'
@@ -12,19 +14,40 @@ import Messaging from '@/components/Messaging'
 import { ArrowLeft, Search, Filter, Plus, Edit, Wand2, Image as ImageIcon, MessageSquare, Lock, Eye } from 'lucide-react'
 
 export default function AvancementPage() {
+  const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
   const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages'>('timeline')
 
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   useEffect(() => {
-    fetchProjects()
+    checkRoleAndFetch()
   }, [])
+
+  // Handle Deep Link via URL
+  useEffect(() => {
+    const projectIdParam = searchParams.get('project')
+    if (projectIdParam && projects.length > 0) {
+      // Verify project exists in loaded list (security + consistency)
+      const target = projects.find(p => p.id === projectIdParam)
+      if (target) {
+        setSelectedProjectId(projectIdParam)
+        setViewMode('detail')
+      }
+    }
+  }, [searchParams, projects])
+
+  const checkRoleAndFetch = async () => {
+    const user = await AuthService.getCurrentUser()
+    setIsAdmin(user?.role === 'admin')
+    fetchProjects()
+  }
 
   const fetchProjects = async () => {
     try {
@@ -170,13 +193,15 @@ export default function AvancementPage() {
               <h1 className="text-2xl font-bold text-gray-900">Suivi Global des Chantiers</h1>
               <p className="text-sm text-gray-500 mt-1">Vue d'ensemble de tous les projets en cours.</p>
             </div>
-            <button
-              onClick={handleCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-ecotp-green-600 text-white rounded-lg text-sm font-medium hover:bg-ecotp-green-700 transition-colors shadow-lg shadow-ecotp-green-900/20"
-            >
-              <Plus className="w-4 h-4" />
-              Nouveau Chantier
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleCreate}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-ecotp-green-600 text-white rounded-lg text-sm font-medium hover:bg-ecotp-green-700 transition-colors shadow-lg shadow-ecotp-green-900/20"
+              >
+                <Plus className="w-4 h-4" />
+                Nouveau Chantier
+              </button>
+            )}
           </div>
 
           {/* Project List */}
@@ -333,7 +358,7 @@ export default function AvancementPage() {
               <Messaging
                 projectId={selectedProjectId || ''}
                 clientId={selectedProject.client_id}
-                clientName={selectedProject.client?.name}
+                clientName={selectedProject.profiles?.name || 'Client'}
               />
             )}
           </div>
@@ -347,7 +372,7 @@ export default function AvancementPage() {
         title={editingProject ? "Modifier le chantier" : "Nouveau chantier"}
       >
         <ProjectForm
-          initialData={editingProject}
+          initialData={editingProject as any}
           onSuccess={handleFormSuccess}
           onCancel={() => setIsModalOpen(false)}
         />

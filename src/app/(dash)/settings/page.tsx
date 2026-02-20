@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AuthService, AuthUser } from '@/lib/auth'
+import { AuthUser } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { Save, Loader2, User, Building, Phone, Mail } from 'lucide-react'
 
@@ -24,35 +24,42 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const currentUser = await AuthService.getCurrentUser()
-        if (!currentUser) {
+        // getSession() est instantané (cache local)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) {
           router.push('/login')
           return
         }
 
-        setUser(currentUser)
+        const userId = session.user.id
+        const userEmail = session.user.email || ''
+        const meta = session.user.user_metadata || {}
 
-        // Récupérer les détails complets du profil
-        const { data: profile, error } = await supabase
+        // Pré-remplir immédiatement depuis la session (instanté)
+        setUser({ id: userId, email: userEmail, name: meta.name || '', role: meta.role || 'client' })
+        setFormData(prev => ({ ...prev, email: userEmail, name: meta.name || '' }))
+        // Finir le loading tout de suite pour afficher le formulaire
+        setLoading(false)
+
+        // Enrichir depuis la BDD en arrière-plan
+        const { data: profile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', currentUser.id)
+          .eq('id', userId)
           .single()
 
-        if (error) throw error
-
         if (profile) {
+          setUser({ id: userId, email: userEmail, name: profile.name || meta.name || '', role: profile.role })
           setFormData({
-            name: profile.name || '',
+            name: profile.name || meta.name || '',
             company: profile.company || '',
             phone: profile.phone || '',
-            email: currentUser.email
+            email: userEmail
           })
         }
       } catch (error) {
         console.error('Erreur chargement profil:', error)
         setMessage({ type: 'error', text: 'Impossible de charger les informations du profil.' })
-      } finally {
         setLoading(false)
       }
     }
@@ -100,8 +107,19 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-ecotp-green-600" />
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div>
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-72 bg-gray-100 rounded animate-pulse mt-2" />
+        </div>
+        <div className="bg-white shadow sm:rounded-lg p-6 space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-1">
+              <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+              <div className="h-10 w-full bg-gray-100 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

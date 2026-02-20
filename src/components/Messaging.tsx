@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { AuthService } from '@/lib/auth'
-import { Send, Paperclip, MoreVertical, User, Clock } from 'lucide-react'
+import { Send, Paperclip, MoreVertical, User, Clock, AlertTriangle } from 'lucide-react'
 
 interface Message {
     id: string
@@ -25,80 +24,129 @@ export default function Messaging({ projectId, clientId, clientName }: Messaging
     const [newMessage, setNewMessage] = useState('')
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
+    const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const currentUser = AuthService.getCurrentUser()
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const [currentUserRole, setCurrentUserRole] = useState<string>('client')
+    const [currentUserName, setCurrentUserName] = useState<string>('Utilisateur')
+
+    // Récupérer user depuis localStorage (non-bloquant)
+    const getCurrentUser = () => {
+        try {
+            const stored = localStorage.getItem('auth_user')
+            if (stored) {
+                const u = JSON.parse(stored)
+                return { id: u.id, name: u.name || u.email || 'Utilisateur', role: u.role || 'client' }
+            }
+        } catch { }
+        return null
+    }
 
     useEffect(() => {
+        // Charger user
+        const user = getCurrentUser()
+        if (user) {
+            setCurrentUserId(user.id)
+            setCurrentUserRole(user.role)
+            setCurrentUserName(user.name)
+        } else {
+            // Fallback session
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (session?.user) {
+                    const meta = session.user.user_metadata
+                    setCurrentUserId(session.user.id)
+                    setCurrentUserRole(meta?.role || 'client')
+                    setCurrentUserName(meta?.name || meta?.full_name || session.user.email?.split('@')[0] || 'Utilisateur')
+                }
+            })
+        }
+
+        // Charger les messages initiaux
         fetchMessages()
-        // Simuler un refresh toutes les 5 secondes
-        const interval = setInterval(fetchMessages, 5000)
-        return () => clearInterval(interval)
+
+        // Vérifier si projectId est un UUID valide
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)
+
+        if (!isUUID) return
+
+        // Mode production: Realtime
+        const channel = supabase
+            .channel(`messages:${projectId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `project_id=eq.${projectId}`
+                },
+                (payload) => {
+                    const localUser = getCurrentUser()
+                    const newMsg: Message = {
+                        id: payload.new.id,
+                        sender_id: payload.new.sender_id,
+                        sender_name: payload.new.sender_name || 'Utilisateur',
+                        content: payload.new.content,
+                        created_at: payload.new.created_at,
+                        is_own: payload.new.sender_id === (localUser?.id || currentUserId)
+                    }
+
+                    setMessages(prev => {
+                        if (prev.some(m => m.id === newMsg.id)) return prev
+                        return [...prev, newMsg]
+                    })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
     }, [projectId])
 
     useEffect(() => {
-        scrollToBottom()
-    }, [messages])
-
-    const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
+    }, [messages])
 
     const fetchMessages = async () => {
         try {
+            setErrorMsg(null)
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)
+
+            if (!isUUID) {
+                setMessages([])
+                return
+            }
+
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
                 .eq('project_id', projectId)
                 .order('created_at', { ascending: true })
 
-            if (error) throw error
-
-            // Fallback avec messages de démo
-            if (!data || data.length === 0) {
-                const demoMessages: Message[] = [
-                    {
-                        id: 'demo-1',
-                        sender_id: clientId || 'client-1',
-                        sender_name: clientName || 'Jean Dupont',
-                        content: 'Bonjour, pouvez-vous me confirmer la date de début des travaux ?',
-                        created_at: new Date(Date.now() - 3600000).toISOString(),
-                        is_own: currentUser?.role === 'client'
-                    },
-                    {
-                        id: 'demo-2',
-                        sender_id: currentUser?.id || 'admin-1',
-                        sender_name: currentUser?.name || 'Admin EcoTP',
-                        content: 'Bonjour Jean, les travaux débuteront le 15 janvier comme prévu.',
-                        created_at: new Date(Date.now() - 3000000).toISOString(),
-                        is_own: currentUser?.role === 'admin'
-                    },
-                    {
-                        id: 'demo-3',
-                        sender_id: clientId || 'client-1',
-                        sender_name: clientName || 'Jean Dupont',
-                        content: 'Parfait ! Et pour le terrassement, vous pensez que ça prendra combien de temps ?',
-                        created_at: new Date(Date.now() - 2400000).toISOString(),
-                        is_own: currentUser?.role === 'client'
-                    },
-                    {
-                        id: 'demo-4',
-                        sender_id: currentUser?.id || 'admin-1',
-                        sender_name: currentUser?.name || 'Admin EcoTP',
-                        content: 'Environ 2 semaines selon les conditions météo. Je vous tiens informé de l\'avancement.',
-                        created_at: new Date(Date.now() - 1800000).toISOString(),
-                        is_own: currentUser?.role === 'admin'
-                    }
-                ]
-                setMessages(demoMessages)
-            } else {
-                const formattedMessages = data.map(msg => ({
-                    ...msg,
-                    is_own: msg.sender_id === currentUser?.id
-                }))
-                setMessages(formattedMessages)
+            if (error) {
+                console.error('Erreur chargement messages:', error)
+                setMessages([])
+                return
             }
-        } catch (err) {
-            console.error('Error fetching messages:', err)
+
+            const localUser = getCurrentUser()
+            const uid = localUser?.id || currentUserId
+
+            const formattedMessages = (data || []).map(msg => ({
+                id: msg.id,
+                sender_id: msg.sender_id,
+                sender_name: msg.sender_name || 'Utilisateur',
+                content: msg.content,
+                created_at: msg.created_at,
+                is_own: msg.sender_id === uid
+            }))
+            setMessages(formattedMessages)
+
+        } catch (err: any) {
+            console.error('Erreur fetch messages:', err)
+            setMessages([])
         } finally {
             setLoading(false)
         }
@@ -108,61 +156,64 @@ export default function Messaging({ projectId, clientId, clientName }: Messaging
         if (!newMessage.trim()) return
 
         setSending(true)
+        setErrorMsg(null)
+
         try {
+            const localUser = getCurrentUser()
+            const userId = localUser?.id || currentUserId
+            const userName = localUser?.name || currentUserName
+
+            if (!userId) {
+                setErrorMsg('Vous devez être connecté pour envoyer un message')
+                return
+            }
+
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)
+
+            if (!isUUID) {
+                setErrorMsg('Projet invalide')
+                return
+            }
+
             const messageData = {
                 project_id: projectId,
-                sender_id: currentUser?.id,
-                sender_name: currentUser?.name,
+                sender_id: userId,
+                sender_name: userName,
                 content: newMessage.trim(),
-                created_at: new Date().toISOString()
             }
 
-            const { error } = await supabase
+            const { data: inserted, error } = await supabase
                 .from('messages')
                 .insert([messageData])
+                .select()
+                .single()
 
-            if (error) throw error
+            if (error) {
+                console.error('Erreur envoi message:', error)
+                setErrorMsg(`Erreur: ${error.message}`)
+                return
+            }
 
-            // Ajouter le message localement en attendant le refresh
+            // Mise à jour optimiste de l'UI (le realtime s'en charge aussi)
             const newMsg: Message = {
-                id: `temp-${Date.now()}`,
-                ...messageData,
+                id: inserted?.id || `temp-${Date.now()}`,
+                sender_id: userId,
+                sender_name: userName,
+                content: newMessage.trim(),
+                created_at: inserted?.created_at || new Date().toISOString(),
                 is_own: true
             }
-            setMessages([...messages, newMsg])
+            setMessages(prev => {
+                if (prev.some(m => m.id === newMsg.id)) return prev
+                return [...prev, newMsg]
+            })
             setNewMessage('')
 
-            // Créer une notification pour le destinataire
-            await createNotification()
-
-            // Refresh après 1 seconde
-            setTimeout(fetchMessages, 1000)
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error sending message:', err)
-            alert('Erreur lors de l\'envoi du message')
+            setErrorMsg(`Erreur: ${err.message}`)
         } finally {
             setSending(false)
-        }
-    }
-
-    const createNotification = async () => {
-        try {
-            // Déterminer le destinataire (si admin envoie → client, si client envoie → admin)
-            const recipientId = currentUser?.role === 'admin' ? clientId : 'admin'
-
-            await supabase
-                .from('notifications')
-                .insert([{
-                    user_id: recipientId,
-                    type: 'message',
-                    title: 'Nouveau message',
-                    message: `${currentUser?.name} vous a envoyé un message`,
-                    project_id: projectId,
-                    read: false,
-                    created_at: new Date().toISOString()
-                }])
-        } catch (err) {
-            console.error('Error creating notification:', err)
         }
     }
 
@@ -187,18 +238,38 @@ export default function Messaging({ projectId, clientId, clientName }: Messaging
                     </div>
                     <div>
                         <h3 className="font-semibold text-white">
-                            {currentUser?.role === 'admin' ? clientName || 'Client' : 'Eco TP'}
+                            {currentUserRole === 'admin' ? clientName || 'Client' : 'Eco TP'}
                         </h3>
                         <p className="text-xs text-ecotp-green-100">Messagerie du projet</p>
                     </div>
                 </div>
-                <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <button
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    onClick={fetchMessages}
+                    title="Actualiser"
+                >
                     <MoreVertical className="w-5 h-5 text-white" />
                 </button>
             </div>
 
+            {/* ERROR Display */}
+            {errorMsg && (
+                <div className="bg-red-50 p-2 text-center text-red-600 text-xs flex items-center justify-center gap-2">
+                    <AlertTriangle className="w-3 h-3" />
+                    {errorMsg}
+                    <button onClick={() => setErrorMsg(null)} className="ml-2 underline">Fermer</button>
+                </div>
+            )}
+
             {/* Messages */}
             <div className="flex-1 p-6 space-y-4 overflow-y-auto bg-gray-50">
+                {messages.length === 0 && !errorMsg && (
+                    <div className="text-center text-gray-400 py-10">
+                        <p>Aucun message pour le moment.</p>
+                        <p className="text-xs">Dites bonjour ! 👋</p>
+                    </div>
+                )}
+
                 {messages.map((message) => (
                     <div
                         key={message.id}
@@ -206,8 +277,8 @@ export default function Messaging({ projectId, clientId, clientName }: Messaging
                     >
                         <div
                             className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.is_own
-                                    ? 'bg-ecotp-green-600 text-white rounded-br-sm'
-                                    : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm'
+                                ? 'bg-ecotp-green-600 text-white rounded-br-sm'
+                                : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm'
                                 }`}
                         >
                             {!message.is_own && (
@@ -216,10 +287,7 @@ export default function Messaging({ projectId, clientId, clientName }: Messaging
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                             <div className="flex items-center gap-2 mt-1">
                                 <Clock className={`w-3 h-3 ${message.is_own ? 'text-ecotp-green-100' : 'text-gray-400'}`} />
-                                <p
-                                    className={`text-xs ${message.is_own ? 'text-ecotp-green-100' : 'text-gray-400'
-                                        }`}
-                                >
+                                <p className={`text-xs ${message.is_own ? 'text-ecotp-green-100' : 'text-gray-400'}`}>
                                     {new Date(message.created_at).toLocaleTimeString('fr-FR', {
                                         hour: '2-digit',
                                         minute: '2-digit'
@@ -237,7 +305,7 @@ export default function Messaging({ projectId, clientId, clientName }: Messaging
                 <div className="flex items-center gap-3">
                     <button
                         className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Joindre un fichier"
+                        title="Joindre un fichier (bientôt disponible)"
                     >
                         <Paperclip className="w-5 h-5" />
                     </button>
@@ -247,17 +315,16 @@ export default function Messaging({ projectId, clientId, clientName }: Messaging
                         rows={1}
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleKeyPress}
                     />
                     <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim() || sending}
                         className="p-2 bg-ecotp-green-600 text-white rounded-lg hover:bg-ecotp-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <Send className="w-5 h-5" />
+                        {sending ? <div className="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send className="w-5 h-5" />}
                     </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">Appuyez sur Entrée pour envoyer</p>
             </div>
         </div>
     )

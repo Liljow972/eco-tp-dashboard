@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { File, Download, Trash2, Eye, Calendar, User } from 'lucide-react';
+import { File, Download, Trash2, Eye, Calendar, User, PenTool, CheckCircle } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase';
+import SignatureModal from './SignatureModal';
 
 interface Document {
   id: string;
@@ -15,6 +16,7 @@ interface Document {
   mime_type: string;
   uploaded_by: string;
   created_at: string;
+  is_signed?: boolean;
 }
 
 interface DocumentListProps {
@@ -24,14 +26,16 @@ interface DocumentListProps {
   className?: string;
 }
 
-export default function DocumentList({ 
-  clientId, 
-  projectId, 
+export default function DocumentList({
+  clientId,
+  projectId,
   onDocumentDeleted,
-  className = '' 
+  className = ''
 }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+
   const supabase = createSupabaseClient();
 
   useEffect(() => {
@@ -41,7 +45,7 @@ export default function DocumentList({
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      
+
       let query = supabase
         .from('documents')
         .select('*')
@@ -119,7 +123,7 @@ export default function DocumentList({
 
       // Mettre à jour la liste locale
       setDocuments(prev => prev.filter(d => d.id !== doc.id));
-      
+
       if (onDocumentDeleted) {
         onDocumentDeleted(doc.id);
       }
@@ -170,7 +174,7 @@ export default function DocumentList({
         <File className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun document</h3>
         <p className="text-gray-500">
-          {projectId 
+          {projectId
             ? 'Aucun document n\'a été uploadé pour ce projet.'
             : 'Aucun document n\'a été uploadé pour ce client.'
           }
@@ -192,11 +196,23 @@ export default function DocumentList({
           <div key={doc.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 flex-1">
-                <div className="text-2xl">
+                <div className="text-2xl relative">
                   {getFileIcon(doc.mime_type)}
+                  {doc.is_signed && (
+                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full">
+                      <CheckCircle className="w-4 h-4 text-green-500 fill-current" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-900 truncate">{doc.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-gray-900 truncate">{doc.name}</h4>
+                    {doc.is_signed && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        Signé
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                     <span>{formatFileSize(doc.file_size)}</span>
                     <div className="flex items-center space-x-1">
@@ -210,15 +226,27 @@ export default function DocumentList({
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => window.open(doc.file_url, '_blank')}
-                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="Prévisualiser"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
+                {/* Visualiser / Signer */}
+                {!doc.is_signed ? (
+                  <button
+                    onClick={() => setSelectedDoc(doc)}
+                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-1"
+                    title="Signer le document"
+                  >
+                    <PenTool className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => window.open(doc.file_url, '_blank')}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Voir le document signé"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                )}
+
                 <button
                   onClick={() => handleDownload(doc)}
                   className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -226,6 +254,7 @@ export default function DocumentList({
                 >
                   <Download className="w-4 h-4" />
                 </button>
+
                 <button
                   onClick={() => handleDelete(doc)}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -238,6 +267,22 @@ export default function DocumentList({
           </div>
         ))}
       </div>
+
+      {/* Modal Signature */}
+      {selectedDoc && (
+        <SignatureModal
+          document={{
+            id: selectedDoc.id,
+            name: selectedDoc.name,
+            url: selectedDoc.file_url
+          }}
+          onClose={() => setSelectedDoc(null)}
+          onSuccess={() => {
+            fetchDocuments(); // Rafraîchir la liste
+            setSelectedDoc(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthService, AuthUser } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import { Activity } from 'lucide-react'
 
 export default function DashboardRedirect() {
@@ -12,11 +13,14 @@ export default function DashboardRedirect() {
     console.log("DashboardRedirect: Démarrage...")
     const redirectUser = async () => {
       try {
-        // Timeout de sécurité 3s
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject("Timeout"), 3000))
+        console.log("DashboardRedirect: En attente de AuthService...")
+
+        // Timeout de sécurité augmenté à 10s
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject("Timeout"), 10000)
+        )
         const userPromise = AuthService.getCurrentUser()
 
-        console.log("DashboardRedirect: En attente de AuthService...")
         const user = await Promise.race([userPromise, timeoutPromise]) as AuthUser | null
 
         console.log("DashboardRedirect: User récupéré:", user)
@@ -38,9 +42,22 @@ export default function DashboardRedirect() {
         }
       } catch (error) {
         console.error('Erreur redirection ou Timeout:', error)
-        // Fallback d'urgence pour l'admin
-        console.log("DashboardRedirect: Fallback -> /admin")
-        window.location.href = `/admin?nocache=${Date.now()}`
+
+        // Essayer de récupérer la session directement
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            console.log("DashboardRedirect: Session trouvée, redirection vers /client")
+            window.location.href = `/client?nocache=${Date.now()}`
+            return
+          }
+        } catch (sessionError) {
+          console.error('Erreur récupération session:', sessionError)
+        }
+
+        // Dernier recours: retour au login
+        console.log("DashboardRedirect: Erreur critique -> Login")
+        router.push('/login')
       }
     }
 

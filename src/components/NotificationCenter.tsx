@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Bell, X, Check, MessageSquare, Calendar, AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { AuthService } from '@/lib/auth'
 
 interface Notification {
     id: string
@@ -19,99 +18,40 @@ export default function NotificationCenter() {
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
-    const currentUser = AuthService.getCurrentUser()
+    const [currentUser, setCurrentUser] = useState<any>(null)
 
     useEffect(() => {
-        fetchNotifications()
-        // Refresh toutes les 30 secondes
-        const interval = setInterval(fetchNotifications, 30000)
+        // Lire user depuis localStorage (non-bloquant)
+        const getLocalUser = () => {
+            try {
+                const stored = localStorage.getItem('auth_user')
+                if (stored) return JSON.parse(stored)
+            } catch { }
+            return null
+        }
+
+        const user = getLocalUser()
+        setCurrentUser(user)
+        if (user?.id) fetchNotifications(user.id)
+
+        // Refresh toutes les 60 secondes
+        const interval = setInterval(() => {
+            const u = getLocalUser()
+            if (u?.id) fetchNotifications(u.id)
+        }, 60000)
         return () => clearInterval(interval)
     }, [])
 
-    const fetchNotifications = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('*')
-                .eq('user_id', currentUser?.id)
-                .order('created_at', { ascending: false })
-                .limit(10)
-
-            if (error) {
-                // Fallback silencieux avec notifications de démo
-                const demoNotifications: Notification[] = [
-                    {
-                        id: 'demo-1',
-                        type: 'message',
-                        title: 'Nouveau message',
-                        message: 'Admin EcoTP vous a envoyé un message concernant votre projet',
-                        read: false,
-                        created_at: new Date(Date.now() - 600000).toISOString()
-                    },
-                    {
-                        id: 'demo-2',
-                        type: 'project',
-                        title: 'Mise à jour du projet',
-                        message: 'Le terrassement de votre projet est terminé',
-                        read: false,
-                        created_at: new Date(Date.now() - 3600000).toISOString()
-                    },
-                    {
-                        id: 'demo-3',
-                        type: 'alert',
-                        title: 'Rappel',
-                        message: 'Visite de chantier prévue demain à 10h',
-                        read: true,
-                        created_at: new Date(Date.now() - 86400000).toISOString()
-                    }
-                ]
-                setNotifications(demoNotifications)
-                setUnreadCount(demoNotifications.filter(n => !n.read).length)
-                return
-            }
-
-            // Fallback avec notifications de démo
-            if (!data || data.length === 0) {
-                const demoNotifications: Notification[] = [
-                    {
-                        id: 'demo-1',
-                        type: 'message',
-                        title: 'Nouveau message',
-                        message: 'Admin EcoTP vous a envoyé un message concernant votre projet',
-                        read: false,
-                        created_at: new Date(Date.now() - 600000).toISOString()
-                    },
-                    {
-                        id: 'demo-2',
-                        type: 'project',
-                        title: 'Mise à jour du projet',
-                        message: 'Le terrassement de votre projet est terminé',
-                        read: false,
-                        created_at: new Date(Date.now() - 3600000).toISOString()
-                    },
-                    {
-                        id: 'demo-3',
-                        type: 'alert',
-                        title: 'Rappel',
-                        message: 'Visite de chantier prévue demain à 10h',
-                        read: true,
-                        created_at: new Date(Date.now() - 86400000).toISOString()
-                    }
-                ]
-                setNotifications(demoNotifications)
-                setUnreadCount(demoNotifications.filter(n => !n.read).length)
-            } else {
-                setNotifications(data)
-                setUnreadCount(data.filter(n => !n.read).length)
-            }
-        } catch (err) {
-            // Fallback silencieux avec notifications de démo
+    const fetchNotifications = async (userId?: string) => {
+        // Ne pas faire de requête si pas d'userId
+        if (!userId) {
+            // Utiliser les notifications de démo
             const demoNotifications: Notification[] = [
                 {
                     id: 'demo-1',
                     type: 'message',
                     title: 'Nouveau message',
-                    message: 'Admin EcoTP vous a envoyé un message',
+                    message: 'Admin EcoTP vous a envoyé un message concernant votre projet',
                     read: false,
                     created_at: new Date(Date.now() - 600000).toISOString()
                 },
@@ -119,13 +59,109 @@ export default function NotificationCenter() {
                     id: 'demo-2',
                     type: 'project',
                     title: 'Mise à jour du projet',
-                    message: 'Le terrassement est terminé',
+                    message: 'Le terrassement de votre projet est terminé',
                     read: false,
                     created_at: new Date(Date.now() - 3600000).toISOString()
                 }
             ]
             setNotifications(demoNotifications)
             setUnreadCount(demoNotifications.filter(n => !n.read).length)
+            return
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('notifications')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(10)
+
+            if (error) {
+                console.error('Erreur chargement notifications:', error);
+                // Générer des notifications basées sur l'activité réelle
+                await generateRealNotifications(userId);
+                return;
+            }
+
+            // Si pas de notifications, générer à partir de l'activité réelle
+            if (!data || data.length === 0) {
+                await generateRealNotifications(userId);
+            } else {
+                setNotifications(data)
+                setUnreadCount(data.filter(n => !n.read).length)
+            }
+        } catch (err) {
+            console.error('Erreur notifications:', err);
+            // Générer des notifications basées sur l'activité réelle
+            await generateRealNotifications(userId);
+        }
+    }
+
+    // Générer des notifications réelles basées sur l'activité
+    const generateRealNotifications = async (userId: string) => {
+        try {
+            const realNotifications: Notification[] = []
+
+            // 1. Messages récents (sans jointure)
+            const { data: messages } = await supabase
+                .from('messages')
+                .select('id, content, created_at, project_id, sender_name')
+                .neq('sender_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(3)
+
+            if (messages && messages.length > 0) {
+                messages.forEach((msg: any) => {
+                    realNotifications.push({
+                        id: `msg-${msg.id}`,
+                        type: 'message',
+                        title: 'Nouveau message',
+                        message: msg.sender_name
+                            ? `${msg.sender_name}: ${msg.content?.slice(0, 50)}...`
+                            : 'Nouveau message sur votre projet',
+                        read: false,
+                        created_at: msg.created_at,
+                        project_id: msg.project_id
+                    })
+                })
+            }
+
+            // 2. Documents récents
+            const { data: documents } = await supabase
+                .from('documents')
+                .select('id, name, created_at')
+                .neq('uploaded_by', userId)
+                .order('created_at', { ascending: false })
+                .limit(2)
+
+            if (documents && documents.length > 0) {
+                documents.forEach((doc: any) => {
+                    realNotifications.push({
+                        id: `doc-${doc.id}`,
+                        type: 'project',
+                        title: 'Nouveau document',
+                        message: `${doc.name} a été ajouté`,
+                        read: false,
+                        created_at: doc.created_at
+                    })
+                })
+            }
+
+            // Trier par date et limiter à 10
+            realNotifications.sort((a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )
+            const limitedNotifications = realNotifications.slice(0, 10)
+
+            setNotifications(limitedNotifications)
+            setUnreadCount(limitedNotifications.filter(n => !n.read).length)
+
+        } catch (err) {
+            console.error('Erreur génération notifications:', err);
+            // En dernier recours, afficher un message vide
+            setNotifications([]);
+            setUnreadCount(0);
         }
     }
 
@@ -146,11 +182,13 @@ export default function NotificationCenter() {
     }
 
     const markAllAsRead = async () => {
+        if (!currentUser?.id) return;
+
         try {
             await supabase
                 .from('notifications')
                 .update({ read: true })
-                .eq('user_id', currentUser?.id)
+                .eq('user_id', currentUser.id)
                 .eq('read', false)
 
             setNotifications(notifications.map(n => ({ ...n, read: true })))

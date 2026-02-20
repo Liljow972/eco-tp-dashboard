@@ -21,26 +21,12 @@ interface KPIStats {
   co2Saved: number
 }
 
-const dataArea = [
-  { name: 'Jan', avancement: 10, budget: 15 },
-  { name: 'Fév', avancement: 25, budget: 20 },
-  { name: 'Mar', avancement: 45, budget: 35 },
-  { name: 'Avr', avancement: 60, budget: 50 },
-  { name: 'Mai', avancement: 75, budget: 65 },
-  { name: 'Juin', avancement: 85, budget: 70 },
-  { name: 'Juil', avancement: 100, budget: 90 },
-];
-
-const dataPie = [
-  { name: 'Terrassement', value: 400 },
-  { name: 'Fondations', value: 300 },
-  { name: 'Finitions', value: 300 },
-  { name: 'Autres', value: 200 },
-];
-
 const COLORS = ['#166534', '#22c55e', '#86efac', '#dcfce7'];
 
 export default function AdminDashboardPage() {
+  const [dataPie, setDataPie] = useState<{ name: string; value: number }[]>([])
+  const [dataArea, setDataArea] = useState<{ name: string; avancement: number; budget: number }[]>([])
+
   const [userName, setUserName] = useState<string>('')
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
   const [stats, setStats] = useState<KPIStats>({ activeProjects: 0, budget: 0, collaborators: 0, co2Saved: 0 })
@@ -51,7 +37,7 @@ export default function AdminDashboardPage() {
     const checkUser = async () => {
       const user = await AuthService.getCurrentUser()
       setUserName(user?.name || 'Administrateur')
-      setIsAdmin(user?.role === 'admin') // Simple check
+      setIsAdmin(user?.role === 'admin')
       fetchDashboardData()
     }
     checkUser()
@@ -67,27 +53,70 @@ export default function AdminDashboardPage() {
 
       if (projectsError) throw projectsError
 
-      // 2. Calculate Stats
-      const active = projects?.filter(p => p.status === 'in_progress').length || 0
-      const totalBudget = projects?.reduce((acc, curr) => acc + (curr.budget || 0), 0) || 0
+      const safeProjects = projects || []
 
-      // 3. CO2 calculation (mock logic based on progress/budget for demo)
-      // 1000€ budget = ~0.5 Tonne CO2 saved via eco-methods (just a metric)
+      // 2. Calculate Stats
+      const active = safeProjects.filter(p => p.status === 'in_progress').length
+      const totalBudget = safeProjects.reduce((acc, curr) => acc + (curr.budget || 0), 0)
+
+      // CO2 calculation (Example metric: 0.5T per 1k€ budget)
       const co2 = Math.round((totalBudget / 1000) * 0.5)
 
-      // 4. Counts
-      // Collaborators would typically be another query, for now use number of distinct clients
-      const clients = new Set(projects?.map(p => p.client_id)).size || 0
+      const clients = new Set(safeProjects.map(p => p.client_id)).size
 
       setStats({
         activeProjects: active,
         budget: totalBudget,
-        collaborators: clients > 0 ? clients : 1, // At least the user
+        collaborators: clients > 0 ? clients : 0,
         co2Saved: co2
       })
 
-      // 5. Recent Activity
-      setRecentProjects(projects?.slice(0, 5) || [])
+      // 3. Dynamic Charts Data
+
+      // 3.1 PIE: Budget Distribution by Status
+      const budgetByStatus = [
+        { name: 'En cours', value: safeProjects.filter(p => p.status === 'in_progress').reduce((acc, p) => acc + (p.budget || 0), 0) },
+        { name: 'Terminé', value: safeProjects.filter(p => p.status === 'completed').reduce((acc, p) => acc + (p.budget || 0), 0) },
+        { name: 'En attente', value: safeProjects.filter(p => p.status === 'pending').reduce((acc, p) => acc + (p.budget || 0), 0) },
+      ].filter(item => item.value > 0);
+
+      setDataPie(budgetByStatus.length > 0 ? budgetByStatus : [{ name: 'Aucun', value: 1 }])
+
+      // 3.2 AREA: Cumulative Budget over last 6 months
+      const last6Months = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        return {
+          month: d.getMonth(),
+          year: d.getFullYear(),
+          name: d.toLocaleDateString('fr-FR', { month: 'short' })
+        };
+      }).reverse();
+
+      const areaData = last6Months.map(period => {
+        const projectsInPeriod = safeProjects.filter(p => {
+          const d = new Date(p.created_at);
+          // Cumulative: include all projects created ON or BEFORE this month
+          return d.getFullYear() < period.year || (d.getFullYear() === period.year && d.getMonth() <= period.month);
+        });
+
+        const budget = projectsInPeriod.reduce((acc, p) => acc + (p.budget || 0), 0) / 1000; // k€
+
+        const avgProgress = projectsInPeriod.length > 0
+          ? projectsInPeriod.reduce((acc, p) => acc + (p.progress || 0), 0) / projectsInPeriod.length
+          : 0;
+
+        return {
+          name: period.name,
+          avancement: Math.round(avgProgress),
+          budget: Number(budget.toFixed(1))
+        };
+      });
+
+      setDataArea(areaData);
+
+      // 4. Recent Activity
+      setRecentProjects(safeProjects.slice(0, 5))
 
     } catch (error) {
       console.error("Error loading dashboard:", error)

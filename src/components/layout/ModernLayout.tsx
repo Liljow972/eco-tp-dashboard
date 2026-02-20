@@ -4,11 +4,12 @@ import { ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { usePathname } from 'next/navigation';
-import { 
-  Home, Users, BarChart3, Settings, Bell, Search, User, 
-  Menu, X, ChevronDown, LogOut, HelpCircle 
+import {
+  Home, Users, BarChart3, Settings, Bell, Search, User,
+  Menu, X, ChevronDown, LogOut, HelpCircle
 } from 'lucide-react';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface ModernLayoutProps {
   children: ReactNode;
@@ -35,11 +36,11 @@ const navigation = {
   ]
 };
 
-export default function ModernLayout({ 
-  children, 
-  title, 
-  subtitle, 
-  showSidebar = true, 
+export default function ModernLayout({
+  children,
+  title,
+  subtitle,
+  showSidebar = true,
   userRole = 'client',
   userName = 'Utilisateur'
 }: ModernLayoutProps) {
@@ -87,15 +88,15 @@ export default function ModernLayout({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAsRead = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notif => 
+    setNotifications(prev =>
+      prev.map(notif =>
         notif.id === id ? { ...notif, read: true } : notif
       )
     );
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(notif => ({ ...notif, read: true }))
     );
   };
@@ -171,7 +172,7 @@ export default function ModernLayout({
 
               {/* Notifications */}
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                   className="notification-button p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors relative"
                 >
@@ -199,7 +200,7 @@ export default function ModernLayout({
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="max-h-96 overflow-y-auto">
                       {notifications.length === 0 ? (
                         <div className="p-4 text-center text-gray-500">
@@ -210,18 +211,15 @@ export default function ModernLayout({
                           <div
                             key={notification.id}
                             onClick={() => markAsRead(notification.id)}
-                            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-                              !notification.read ? 'bg-blue-50' : ''
-                            }`}
+                            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50' : ''
+                              }`}
                           >
                             <div className="flex items-start space-x-3">
-                              <div className={`w-2 h-2 rounded-full mt-2 ${
-                                !notification.read ? 'bg-blue-500' : 'bg-gray-300'
-                              }`}></div>
+                              <div className={`w-2 h-2 rounded-full mt-2 ${!notification.read ? 'bg-blue-500' : 'bg-gray-300'
+                                }`}></div>
                               <div className="flex-1">
-                                <h4 className={`text-sm font-medium ${
-                                  !notification.read ? 'text-gray-900' : 'text-gray-700'
-                                }`}>
+                                <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'
+                                  }`}>
                                   {notification.title}
                                 </h4>
                                 <p className="text-sm text-gray-600 mt-1">
@@ -236,7 +234,7 @@ export default function ModernLayout({
                         ))
                       )}
                     </div>
-                    
+
                     <div className="p-4 border-t border-gray-200">
                       <Link
                         href="/notifications"
@@ -275,7 +273,15 @@ export default function ModernLayout({
                       Paramètres
                     </Link>
                     <div className="divider"></div>
-                    <button className="dropdown-item text-red-600 w-full text-left">
+                    <button
+                      className="dropdown-item text-red-600 w-full text-left"
+                      onClick={() => {
+                        localStorage.removeItem('auth_user')
+                        localStorage.removeItem('rememberMe')
+                        window.location.href = '/login'
+                        supabase.auth.signOut().catch(() => { })
+                      }}
+                    >
                       <LogOut className="w-4 h-4 mr-3" />
                       Déconnexion
                     </button>

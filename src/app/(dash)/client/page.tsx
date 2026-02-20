@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AuthService } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import ClientDashboard from '@/components/ClientDashboard'
 
 export default function ClientDashboardPage() {
@@ -11,8 +11,25 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const u = await AuthService.getCurrentUser()
-        setUser(u)
+        // Lecture depuis localStorage (non-bloquant)
+        const stored = localStorage.getItem('auth_user')
+        if (stored) {
+          setUser(JSON.parse(stored))
+          setLoading(false)
+          return
+        }
+
+        // Fallback session (avec timeout)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const meta = session.user.user_metadata
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            name: meta?.name || meta?.full_name || session.user.email,
+            role: meta?.role || 'client'
+          })
+        }
       } catch (err) {
         console.error(err)
       } finally {
@@ -22,11 +39,17 @@ export default function ClientDashboardPage() {
     loadUser()
   }, [])
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Chargement espace client...</div>
+  if (loading) return (
+    <div className="flex items-center justify-center p-16">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-ecotp-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-500">Chargement de votre espace client...</p>
+      </div>
+    </div>
+  )
 
   return (
     <div className="animate-fade-in p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Tableau de bord Client</h1>
       {user ? (
         <ClientDashboard />
       ) : (

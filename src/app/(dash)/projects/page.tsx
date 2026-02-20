@@ -20,7 +20,7 @@ export default function ProjectsPage() {
 
   const fetchClientProjects = async () => {
     try {
-      // 1. Get current user
+      // getSession() = cache local instantané
       const { data: { session } } = await supabase.auth.getSession()
 
       let fetchedProjects: Project[] = []
@@ -28,35 +28,24 @@ export default function ProjectsPage() {
       if (session) {
         const { data, error } = await supabase
           .from('projects')
-          .select(`
-             *,
-             profiles (
-               name,
-               company,
-               email
-             ),
-             project_steps (*)
-           `)
+          .select(`*, profiles (name, company, email), project_steps (*)`)
           .eq('client_id', session.user.id)
           .order('created_at', { ascending: false })
 
-        if (data && !error) {
-          fetchedProjects = data.map((p: any) => ({
-            ...p,
-            profiles: p.profiles // project_steps is already in p
-          }))
+        if (data && !error && data.length > 0) {
+          fetchedProjects = data
         }
       }
 
-      // 2. If no data/session, use Mock for Demo
+      // Fallback: données mock si aucun projet
       if (fetchedProjects.length === 0) {
-        const mockProjects: any[] = [
+        fetchedProjects = [
           {
             id: 'proj-client-demo',
             name: 'Ma Villa - Terrassement (Démo)',
             status: 'in_progress',
             progress: 35,
-            client_id: 'client-me',
+            client_id: session?.user.id || 'demo',
             budget: 25000,
             spent: 8000,
             start_date: '2024-03-01',
@@ -64,14 +53,25 @@ export default function ProjectsPage() {
             profiles: { name: 'Client Démo' },
             project_steps: []
           }
-        ];
-        fetchedProjects = mockProjects
+        ] as any[]
       }
 
       setProjects(fetchedProjects)
       if (fetchedProjects.length > 0) setSelectedProjectId(fetchedProjects[0].id)
+
     } catch (err) {
       console.error("Error loading client projects:", err)
+      // Fallback même en cas d'erreur
+      const fallback: any[] = [{
+        id: 'proj-error-fallback',
+        name: 'Projet Démo',
+        status: 'in_progress', progress: 0,
+        client_id: 'demo', budget: 0, spent: 0,
+        start_date: '2024-01-01', end_date: '2024-12-31',
+        profiles: { name: 'Démo' }, project_steps: []
+      }]
+      setProjects(fallback)
+      setSelectedProjectId(fallback[0].id)
     } finally {
       setLoading(false)
     }
@@ -79,7 +79,27 @@ export default function ProjectsPage() {
 
   const selectedProject = projects.find(p => p.id === selectedProjectId)
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Chargement de votre dossier...</div>
+  if (loading) return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          <div className="h-8 w-48 bg-gray-200 rounded" />
+          <div className="h-4 w-72 bg-gray-100 rounded" />
+        </div>
+      </div>
+      <div className="border-b border-gray-200">
+        <div className="flex space-x-8 py-4">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-4 w-24 bg-gray-100 rounded" />)}
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl p-6 space-y-4">
+        <div className="h-6 w-64 bg-gray-200 rounded" />
+        <div className="h-4 w-full bg-gray-100 rounded" />
+        <div className="h-4 w-3/4 bg-gray-100 rounded" />
+        <div className="h-32 w-full bg-gray-100 rounded" />
+      </div>
+    </div>
+  )
 
   if (!selectedProject) {
     return (

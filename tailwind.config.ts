@@ -20,24 +20,37 @@ const config: Config = {
             200: '#9ED8C9',
             300: '#6FC4B0',
             400: '#45AD96',
-            500: '#0B3D2E', // Base
+            500: '#0B3D2E',
             600: '#083226',
             700: '#06281E',
             800: '#041D16',
             900: '#02120E',
           },
+          // Nouvelle palette terre/warm
+          warm: {
+            50: '#f5f3ec',
+            100: '#eae6df', // Background sable (bg principal)
+            200: '#d4cfc4',
+            300: '#b8b09e',
+            400: '#8c8572',
+            500: '#6b6450',
+            600: '#524f3d', // Primary / CTA
+            700: '#44412f', // Hover
+            800: '#38362a', // Dark / Secondary
+            900: '#2a2920',
+          },
           beige: {
             DEFAULT: '#F5F0E8',
             50: '#FDFBF9',
             100: '#FAF6F2',
-            200: '#F5F0E8', // Base
+            200: '#F5F0E8',
             300: '#EBE0D1',
             400: '#E0CEB5',
             500: '#D6BC99',
           },
           brown: {
-             DEFAULT: '#8D6E63', // Complementary earth tone
-             500: '#8D6E63',
+            DEFAULT: '#8D6E63',
+            500: '#8D6E63',
           },
           white: '#FFFFFF',
           gray: {
@@ -60,7 +73,10 @@ const config: Config = {
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
         'fade-in-up': 'fadeInUp 0.7s ease-out',
+        'fade-in-down': 'fadeInDown 0.5s ease-out',
         'float': 'float 6s ease-in-out infinite',
+        'scale-in': 'scaleIn 0.4s ease-out',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
       },
       keyframes: {
         fadeIn: {
@@ -70,6 +86,14 @@ const config: Config = {
         fadeInUp: {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeInDown: {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
