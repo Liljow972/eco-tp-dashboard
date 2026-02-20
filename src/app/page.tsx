@@ -29,7 +29,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center space-x-3">
             <Link href="/login"
-              className="hidden sm:block font-medium px-4 py-2 transition-colors hover:opacity-80"
+              className="font-medium px-4 py-2 transition-colors hover:opacity-80"
               style={{ color: '#38362a' }}>
               Connexion
             </Link>
