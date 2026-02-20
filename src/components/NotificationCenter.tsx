@@ -99,53 +99,118 @@ export default function NotificationCenter() {
     }
 
     // Générer des notifications réelles basées sur l'activité
+    // Sécurité : admin voit tout, client ne voit que son activité
     const generateRealNotifications = async (userId: string) => {
         try {
             const realNotifications: Notification[] = []
 
-            // 1. Messages récents (sans jointure)
-            const { data: messages } = await supabase
-                .from('messages')
-                .select('id, content, created_at, project_id, sender_name')
-                .neq('sender_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(3)
+            // Lire le rôle depuis localStorage (sync, non bloquant)
+            const localUser = (() => {
+                try { return JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { return null }
+            })()
+            const isAdmin = localUser?.role === 'admin'
 
-            if (messages && messages.length > 0) {
-                messages.forEach((msg: any) => {
+            if (isAdmin) {
+                // ── ADMIN : voit toute l'activité globale ──────────────────
+
+                // Messages récents de toute l'appli
+                const { data: messages } = await supabase
+                    .from('messages')
+                    .select('id, content, created_at, project_id, sender_name')
+                    .neq('sender_id', userId)
+                    .order('created_at', { ascending: false })
+                    .limit(5)
+
+                messages?.forEach((msg: any) => {
                     realNotifications.push({
                         id: `msg-${msg.id}`,
                         type: 'message',
-                        title: 'Nouveau message',
+                        title: 'Nouveau message client',
                         message: msg.sender_name
-                            ? `${msg.sender_name}: ${msg.content?.slice(0, 50)}...`
-                            : 'Nouveau message sur votre projet',
+                            ? `${msg.sender_name}: ${msg.content?.slice(0, 60)}...`
+                            : 'Nouveau message sur un projet',
                         read: false,
                         created_at: msg.created_at,
                         project_id: msg.project_id
                     })
                 })
-            }
 
-            // 2. Documents récents
-            const { data: documents } = await supabase
-                .from('documents')
-                .select('id, name, created_at')
-                .neq('uploaded_by', userId)
-                .order('created_at', { ascending: false })
-                .limit(2)
+                // Documents récents uploadés par les clients
+                const { data: documents } = await supabase
+                    .from('documents')
+                    .select('id, name, label, created_at')
+                    .neq('uploaded_by', userId)
+                    .order('created_at', { ascending: false })
+                    .limit(3)
 
-            if (documents && documents.length > 0) {
-                documents.forEach((doc: any) => {
+                documents?.forEach((doc: any) => {
                     realNotifications.push({
                         id: `doc-${doc.id}`,
                         type: 'project',
                         title: 'Nouveau document',
-                        message: `${doc.name} a été ajouté`,
+                        message: `${doc.label || doc.name} a été ajouté`,
                         read: false,
                         created_at: doc.created_at
                     })
                 })
+
+            } else {
+                // ── CLIENT : uniquement son activité ──────────────────────
+
+                // 1. Récupérer les project_ids du client
+                const { data: clientProjects } = await supabase
+                    .from('projects')
+                    .select('id')
+                    .eq('client_id', userId)
+
+                const projectIds = clientProjects?.map((p: any) => p.id) ?? []
+
+                // 2. Messages sur SES projets uniquement (par d'autres que lui)
+                if (projectIds.length > 0) {
+                    const { data: messages } = await supabase
+                        .from('messages')
+                        .select('id, content, created_at, project_id, sender_name')
+                        .in('project_id', projectIds)
+                        .neq('sender_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(5)
+
+                    messages?.forEach((msg: any) => {
+                        realNotifications.push({
+                            id: `msg-${msg.id}`,
+                            type: 'message',
+                            title: 'Nouveau message',
+                            message: msg.sender_name
+                                ? `${msg.sender_name}: ${msg.content?.slice(0, 60)}...`
+                                : 'Nouveau message sur votre projet',
+                            read: false,
+                            created_at: msg.created_at,
+                            project_id: msg.project_id
+                        })
+                    })
+                }
+
+                // 3. Documents uploadés par l'admin pour ce client (par project_id)
+                if (projectIds.length > 0) {
+                    const { data: documents } = await supabase
+                        .from('documents')
+                        .select('id, name, label, created_at, project_id')
+                        .in('project_id', projectIds)
+                        .neq('uploaded_by', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(3)
+
+                    documents?.forEach((doc: any) => {
+                        realNotifications.push({
+                            id: `doc-${doc.id}`,
+                            type: 'project',
+                            title: 'Nouveau document partagé',
+                            message: `${doc.label || doc.name} a été ajouté à votre projet`,
+                            read: false,
+                            created_at: doc.created_at
+                        })
+                    })
+                }
             }
 
             // Trier par date et limiter à 10
@@ -158,12 +223,12 @@ export default function NotificationCenter() {
             setUnreadCount(limitedNotifications.filter(n => !n.read).length)
 
         } catch (err) {
-            console.error('Erreur génération notifications:', err);
-            // En dernier recours, afficher un message vide
-            setNotifications([]);
-            setUnreadCount(0);
+            console.error('Erreur génération notifications:', err)
+            setNotifications([])
+            setUnreadCount(0)
         }
     }
+
 
     const markAsRead = async (notificationId: string) => {
         try {
