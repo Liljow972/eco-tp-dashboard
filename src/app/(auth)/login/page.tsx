@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, User } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -88,16 +88,6 @@ const LoginPage = () => {
     }
   }
 
-  const fillDemo = (type: 'admin' | 'client') => {
-    if (type === 'admin') {
-      setEmail('admin@ecotravaux.fr')
-      setPassword('Demo2024!')
-    } else {
-      setEmail('client@demo.fr')
-      setPassword('Demo2024!')
-    }
-  }
-
   return (
     <div className="min-h-screen flex w-full" style={{ backgroundColor: BG }}>
 
@@ -120,8 +110,13 @@ const LoginPage = () => {
           {/* Logo + Titre */}
           <div className="text-center mb-10">
             <div className="inline-flex justify-center mb-6">
-              <div className="relative w-14 h-14">
-                <Image src="/LOGO_ECO_TP-05.png" alt="Eco TP" fill className="object-contain" />
+              <div className="relative w-48 h-16">
+                <Image
+                  src="/LOGO_ECO_TP_Plan de travail 1.svg"
+                  alt="Eco TP"
+                  fill
+                  className="object-contain"
+                />
               </div>
             </div>
             <h1 className="text-3xl font-bold tracking-tight" style={{ color: DARK }}>
@@ -160,11 +155,7 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full rounded-xl py-3 pl-10 pr-4 text-sm shadow-sm outline-none transition-all"
-                  style={{
-                    backgroundColor: '#fff',
-                    border: '1.5px solid #d4cfc4',
-                    color: DARK,
-                  }}
+                  style={{ backgroundColor: '#fff', border: '1.5px solid #d4cfc4', color: DARK }}
                   onFocus={e => { e.target.style.borderColor = PRIMARY }}
                   onBlur={e => { e.target.style.borderColor = '#d4cfc4' }}
                   placeholder="exemple@entreprise.com"
@@ -189,11 +180,7 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full rounded-xl py-3 pl-10 pr-10 text-sm shadow-sm outline-none transition-all"
-                  style={{
-                    backgroundColor: '#fff',
-                    border: '1.5px solid #d4cfc4',
-                    color: DARK,
-                  }}
+                  style={{ backgroundColor: '#fff', border: '1.5px solid #d4cfc4', color: DARK }}
                   onFocus={e => { e.target.style.borderColor = PRIMARY }}
                   onBlur={e => { e.target.style.borderColor = '#d4cfc4' }}
                   placeholder="••••••••••"
@@ -215,7 +202,7 @@ const LoginPage = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded"
                   style={{ accentColor: PRIMARY }}
                 />
                 <span className="text-sm" style={{ color: '#6b6450' }}>Se souvenir de moi</span>
@@ -288,35 +275,6 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Section Démo */}
-          <div className="mt-6 rounded-2xl border-2 p-4" style={{ borderColor: '#d4cfc4', backgroundColor: 'rgba(255,255,255,0.5)' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <User className="w-4 h-4" style={{ color: PRIMARY }} />
-              <p className="text-sm font-semibold" style={{ color: DARK }}>Comptes de démonstration</p>
-            </div>
-            <p className="text-xs mb-3" style={{ color: '#8c8572' }}>
-              Découvrir la plateforme en mode test :
-            </p>
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => fillDemo('admin')}
-                className="text-left text-xs px-3 py-2.5 rounded-xl border transition-all hover:opacity-80"
-                style={{ backgroundColor: '#fff', borderColor: '#d4cfc4', color: PRIMARY }}>
-                <span className="font-semibold">👤 Accès Administrateur</span>
-                <span className="text-gray-400 ml-1">(Démo)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo('client')}
-                className="text-left text-xs px-3 py-2.5 rounded-xl border transition-all hover:opacity-80"
-                style={{ backgroundColor: '#fff', borderColor: '#d4cfc4', color: PRIMARY }}>
-                <span className="font-semibold">🏠 Accès Client</span>
-                <span className="text-gray-400 ml-1">(Démo)</span>
-              </button>
-            </div>
-          </div>
-
           {/* Créer un compte */}
           <p className="mt-6 text-center text-sm" style={{ color: '#6b6450' }}>
             Pas encore d&#8217;espace ?{' '}
@@ -354,7 +312,13 @@ const LoginPage = () => {
             style={{ backgroundColor: 'rgba(56,54,42,0.6)', borderColor: 'rgba(255,255,255,0.15)' }}>
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6"
               style={{ backgroundColor: 'rgba(234,230,223,0.15)' }}>
-              <Image src="/LOGO_ECO_TP-05.png" alt="Eco TP" width={32} height={32} className="object-contain" />
+              <Image
+                src="/LOGO_ECO_TP_Plan de travail 1.svg"
+                alt="Eco TP"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
             </div>
             <h3 className="text-2xl font-bold mb-3 text-white">
               Votre chantier, toujours à portée de main.

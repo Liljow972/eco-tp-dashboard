@@ -196,7 +196,8 @@ export default function AvancementPage() {
             {isAdmin && (
               <button
                 onClick={handleCreate}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-ecotp-green-600 text-white rounded-lg text-sm font-medium hover:bg-ecotp-green-700 transition-colors shadow-lg shadow-ecotp-green-900/20"
+                className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-xl text-sm font-semibold transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-md"
+                style={{ backgroundColor: '#524f3d' }}
               >
                 <Plus className="w-4 h-4" />
                 Nouveau Chantier
@@ -212,7 +213,8 @@ export default function AvancementPage() {
                 <input
                   type="text"
                   placeholder="Rechercher un projet..."
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ecotp-green-500/20 focus:border-ecotp-green-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none transition-all"
+                  style={{ '--tw-ring-color': '#524f3d' } as React.CSSProperties}
                 />
               </div>
               <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">

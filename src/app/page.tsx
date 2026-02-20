@@ -83,11 +83,6 @@ export default function LandingPage() {
                 Créer mon espace
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="#features"
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border-2 transition-all hover:opacity-80"
-                style={{ color: '#524f3d', borderColor: '#524f3d', backgroundColor: 'transparent' }}>
-                Voir la démo
-              </Link>
             </div>
           </div>
 
