@@ -1,19 +1,24 @@
 "use client"
 
 import Card from '@/components/Card'
-import { AuthService } from '@/lib/auth'
 import { getClients } from '@/lib/mock'
 import { useEffect, useState } from 'react'
 
+// Lecture synchrone du rôle depuis localStorage (même pattern que Sidebar)
+const getLocalRole = () => {
+  if (typeof window === 'undefined') return null
+  try { return JSON.parse(localStorage.getItem('auth_user') || 'null')?.role } catch { return null }
+}
+
 export default function ClientsPage() {
-  const user = AuthService.getCurrentUser()
+  const role = getLocalRole()
   const [list, setList] = useState<{ id: string; name: string; email: string }[]>([])
 
   useEffect(() => {
     getClients().then(setList)
   }, [])
 
-  if (user?.role !== 'admin') {
+  if (role !== 'admin') {
     return (
       <div className="space-y-6">
         <Card className="bg-ecotp-white" title="Accès restreint">

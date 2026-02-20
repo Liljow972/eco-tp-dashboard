@@ -98,7 +98,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
             >
               <div
                 className="h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm ring-2 ring-white shadow-sm"
-                style={{ backgroundColor: PRIMARY, color: '#eae6df', ringColor: 'white' }}>
+                style={{ backgroundColor: PRIMARY, color: '#eae6df' }}>
                 {userInitial}
               </div>
               <span className="hidden lg:flex lg:items-center">

@@ -27,7 +27,7 @@ export default function ClientDashboard() {
 
     useEffect(() => {
         const init = async () => {
-            const user = AuthService.getCurrentUser()
+            const user = await AuthService.getCurrentUser()
             if (!user) {
                 router.push('/login')
                 return

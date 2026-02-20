@@ -55,7 +55,9 @@ export default function PhotoGalleryAdmin({ projectId }: PhotoGalleryProps) {
     const [filter, setFilter] = useState<'all' | 'before' | 'progress' | 'after'>('all')
     const [uploading, setUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const currentUser = AuthService.getCurrentUser()
+    const currentUser = (() => {
+        try { return typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('auth_user') || 'null') : null } catch { return null }
+    })()
     const isAdmin = currentUser?.role === 'admin'
 
     const filteredPhotos = filter === 'all'

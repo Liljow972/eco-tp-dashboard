@@ -13,6 +13,7 @@ interface Client {
   company?: string
   address?: string
   role: string
+  status?: string
   created_at: string
   updated_at: string
 }
@@ -67,8 +68,8 @@ export default function AdminClientsPage() {
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (client.company && client.company.toLowerCase().includes(searchTerm.toLowerCase()))
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.company && client.company.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesSearch
   })
 
@@ -76,7 +77,7 @@ export default function AdminClientsPage() {
     const clientProjects = projects.filter(p => p.client_id === clientId)
     const totalBudget = clientProjects.reduce((sum, p) => sum + p.budget, 0)
     const totalSpent = clientProjects.reduce((sum, p) => sum + p.spent, 0)
-    const avgProgress = clientProjects.length > 0 
+    const avgProgress = clientProjects.length > 0
       ? Math.round(clientProjects.reduce((sum, p) => sum + p.progress, 0) / clientProjects.length)
       : 0
 
@@ -170,7 +171,7 @@ export default function AdminClientsPage() {
                     />
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => setShowNewClientModal(true)}
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
                   >
@@ -186,7 +187,7 @@ export default function AdminClientsPage() {
               <div className="grid gap-4">
                 {filteredClients.map((client) => {
                   const stats = getClientStats(client.id)
-                  
+
                   return (
                     <div key={client.id} className="group border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-200">
                       <div className="flex items-center justify-between">
@@ -244,7 +245,7 @@ export default function AdminClientsPage() {
                             <p className="text-xl font-bold text-gray-900">{stats.avgProgress}%</p>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <button 
+                            <button
                               onClick={() => router.push(`/admin/clients/${client.id}`)}
                               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-colors font-medium"
                             >
