@@ -32,13 +32,12 @@ export default function DashboardRedirect() {
         }
 
         const timestamp = Date.now()
-        // Ajout du timestamp pour forcer le navigateur à ignorer le cache 308 (Redirection permanente)
         if (user.role === 'admin') {
           console.log("DashboardRedirect: Admin -> /admin")
-          window.location.href = `/admin?nocache=${timestamp}`
+          router.push(`/admin`)
         } else {
           console.log("DashboardRedirect: Client -> /client")
-          window.location.href = `/client?nocache=${timestamp}`
+          router.push(`/client`)
         }
       } catch (error) {
         console.error('Erreur redirection ou Timeout:', error)
@@ -48,7 +47,7 @@ export default function DashboardRedirect() {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user) {
             console.log("DashboardRedirect: Session trouvée, redirection vers /client")
-            window.location.href = `/client?nocache=${Date.now()}`
+            router.push(`/client`)
             return
           }
         } catch (sessionError) {

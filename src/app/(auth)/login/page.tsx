@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -11,6 +12,7 @@ const DARK = '#38362a'
 const BG = '#eae6df'
 
 const LoginPage = () => {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -80,7 +82,7 @@ const LoginPage = () => {
         role,
         company: profile?.company || ''
       }))
-      window.location.href = role === 'admin' ? '/admin' : '/client'
+      router.push(role === 'admin' ? '/admin' : '/client')
     } catch (err) {
       console.error('Erreur login:', err)
       setError("Une erreur est survenue. Vérifiez votre connexion internet.")
@@ -304,7 +306,7 @@ const LoginPage = () => {
 
       {/* ── PANNEAU DROIT — Photo chantier ── */}
       <div className="hidden lg:block relative flex-1" style={{ backgroundColor: DARK }}>
-        <div className="absolute inset-0 bg-[url('/DJI_0198-4.jpg')] bg-cover bg-center" />
+        <Image src="/DJI_0198-4.jpg" alt="Chantier" fill className="object-cover object-center" priority sizes="50vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/30" />
 
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-10">
