@@ -29,6 +29,49 @@ export default function ClientManagementPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [messageContent, setMessageContent] = useState('')
 
+  // New client form state
+  const [newClientData, setNewClientData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    address: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleCreateClient = async () => {
+    if (!newClientData.name || !newClientData.email) {
+      alert('Le nom et l\'email sont requis')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClientData)
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Erreur lors de la création du client')
+      }
+
+      // Update local state with the newly created client
+      setClients(prev => [data, ...prev])
+      setIsModalOpen(false)
+      setNewClientData({ name: '', email: '', phone: '', company: '', address: '' })
+      alert('Client créé avec succès ! Un email a été envoyé pour l\'activation de son compte.')
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || 'Erreur réseau')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   useEffect(() => {
     fetchClients()
   }, [])
@@ -367,20 +410,24 @@ export default function ClientManagementPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
             <input
               type="text"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ecotp-green-500 outline-none"
               placeholder="Jean Dupont"
+              value={newClientData.name}
+              onChange={e => setNewClientData({ ...newClientData, name: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
             <input
               type="email"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ecotp-green-500 outline-none"
               placeholder="jean.dupont@example.com"
+              value={newClientData.email}
+              onChange={e => setNewClientData({ ...newClientData, email: e.target.value })}
             />
           </div>
 
@@ -390,6 +437,8 @@ export default function ClientManagementPage() {
               type="tel"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ecotp-green-500 outline-none"
               placeholder="+33 6 12 34 56 78"
+              value={newClientData.phone}
+              onChange={e => setNewClientData({ ...newClientData, phone: e.target.value })}
             />
           </div>
 
@@ -399,6 +448,8 @@ export default function ClientManagementPage() {
               type="text"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ecotp-green-500 outline-none"
               placeholder="Dupont Construction"
+              value={newClientData.company}
+              onChange={e => setNewClientData({ ...newClientData, company: e.target.value })}
             />
           </div>
 
@@ -408,6 +459,8 @@ export default function ClientManagementPage() {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ecotp-green-500 outline-none resize-none"
               rows={2}
               placeholder="123 Rue de la Paix, 75001 Paris"
+              value={newClientData.address}
+              onChange={e => setNewClientData({ ...newClientData, address: e.target.value })}
             />
           </div>
 
@@ -415,13 +468,16 @@ export default function ClientManagementPage() {
             <button
               onClick={() => setIsModalOpen(false)}
               className="px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+              disabled={isSubmitting}
             >
               Annuler
             </button>
             <button
-              className="px-4 py-2 bg-ecotp-green-600 text-white rounded-lg hover:bg-ecotp-green-700 transition-colors"
+              onClick={handleCreateClient}
+              disabled={isSubmitting || !newClientData.name || !newClientData.email}
+              className="px-4 py-2 bg-ecotp-green-600 text-white rounded-lg hover:bg-ecotp-green-700 transition-colors disabled:opacity-50"
             >
-              Créer le client
+              {isSubmitting ? 'Création...' : 'Créer le client'}
             </button>
           </div>
         </div>
