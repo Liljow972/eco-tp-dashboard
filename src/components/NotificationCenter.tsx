@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Bell, X, Check, MessageSquare, Calendar, AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 interface Notification {
     id: string
@@ -19,6 +20,7 @@ export default function NotificationCenter() {
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [currentUser, setCurrentUser] = useState<any>(null)
+    const router = useRouter()
 
     useEffect(() => {
         // Lire user depuis localStorage (non-bloquant)
@@ -104,11 +106,14 @@ export default function NotificationCenter() {
         try {
             const realNotifications: Notification[] = []
 
-            // Lire le rôle depuis localStorage (sync, non bloquant)
+            // Lire le rôle et les ids ignorés depuis localStorage
             const localUser = (() => {
                 try { return JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { return null }
             })()
             const isAdmin = localUser?.role === 'admin'
+
+            const hiddenNotifs: string[] = JSON.parse(localStorage.getItem('hidden_notifs') || '[]')
+            const readNotifs: string[] = JSON.parse(localStorage.getItem('read_notifs') || '[]')
 
             if (isAdmin) {
                 // ── ADMIN : voit toute l'activité globale ──────────────────
@@ -213,11 +218,19 @@ export default function NotificationCenter() {
                 }
             }
 
+            // Filtrer les cachées et appliquer l'état lu
+            const filteredNotifications = realNotifications
+                .filter(n => !hiddenNotifs.includes(n.id))
+                .map(n => ({
+                    ...n,
+                    read: readNotifs.includes(n.id) ? true : n.read
+                }))
+
             // Trier par date et limiter à 10
-            realNotifications.sort((a, b) =>
+            filteredNotifications.sort((a, b) =>
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             )
-            const limitedNotifications = realNotifications.slice(0, 10)
+            const limitedNotifications = filteredNotifications.slice(0, 10)
 
             setNotifications(limitedNotifications)
             setUnreadCount(limitedNotifications.filter(n => !n.read).length)
@@ -232,10 +245,19 @@ export default function NotificationCenter() {
 
     const markAsRead = async (notificationId: string) => {
         try {
-            await supabase
-                .from('notifications')
-                .update({ read: true })
-                .eq('id', notificationId)
+            if (notificationId.startsWith('msg-') || notificationId.startsWith('doc-') || notificationId.startsWith('demo-')) {
+                // Fausse notification
+                const readNotifs = JSON.parse(localStorage.getItem('read_notifs') || '[]')
+                if (!readNotifs.includes(notificationId)) {
+                    localStorage.setItem('read_notifs', JSON.stringify([...readNotifs, notificationId]))
+                }
+            } else {
+                // Vraie notification BD
+                await supabase
+                    .from('notifications')
+                    .update({ read: true })
+                    .eq('id', notificationId)
+            }
 
             setNotifications(notifications.map(n =>
                 n.id === notificationId ? { ...n, read: true } : n
@@ -250,6 +272,14 @@ export default function NotificationCenter() {
         if (!currentUser?.id) return;
 
         try {
+            // Sauvegarder localement pour les fausses
+            const readNotifs = JSON.parse(localStorage.getItem('read_notifs') || '[]')
+            const fakeIds = notifications.filter(n => !n.read && (n.id.startsWith('msg-') || n.id.startsWith('doc-') || n.id.startsWith('demo-'))).map(n => n.id)
+            if (fakeIds.length > 0) {
+                localStorage.setItem('read_notifs', JSON.stringify([...readNotifs, ...fakeIds]))
+            }
+
+            // Vraies BD
             await supabase
                 .from('notifications')
                 .update({ read: true })
@@ -265,10 +295,19 @@ export default function NotificationCenter() {
 
     const deleteNotification = async (notificationId: string) => {
         try {
-            await supabase
-                .from('notifications')
-                .delete()
-                .eq('id', notificationId)
+            if (notificationId.startsWith('msg-') || notificationId.startsWith('doc-') || notificationId.startsWith('demo-')) {
+                // Fausse notification
+                const hiddenNotifs = JSON.parse(localStorage.getItem('hidden_notifs') || '[]')
+                if (!hiddenNotifs.includes(notificationId)) {
+                    localStorage.setItem('hidden_notifs', JSON.stringify([...hiddenNotifs, notificationId]))
+                }
+            } else {
+                // Vraie notification BD
+                await supabase
+                    .from('notifications')
+                    .delete()
+                    .eq('id', notificationId)
+            }
 
             setNotifications(notifications.filter(n => n.id !== notificationId))
             const deletedNotif = notifications.find(n => n.id === notificationId)
@@ -410,10 +449,20 @@ export default function NotificationCenter() {
 
                         {/* Footer */}
                         {notifications.length > 0 && (
-                            <div className="p-3 border-t border-gray-100 text-center shrink-0">
-                                <button className="text-sm font-medium transition-opacity hover:opacity-70"
-                                    style={{ color: '#524f3d' }}>
+                            <div className="p-3 border-t border-gray-100 flex items-center justify-between text-center shrink-0">
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        router.push('/notifications');
+                                    }}
+                                    className="text-sm font-medium transition-opacity hover:opacity-70 text-blue-600 hover:text-blue-800">
                                     Voir toutes les notifications
+                                </button>
+                                <button
+                                    onClick={() => setIsOpen(false)}
+                                    className="text-sm font-medium transition-opacity hover:opacity-70"
+                                    style={{ color: '#524f3d' }}>
+                                    Fermer
                                 </button>
                             </div>
                         )}

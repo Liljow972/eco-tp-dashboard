@@ -62,15 +62,50 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
         console.error('Erreur chargement documents:', JSON.stringify(error))
         setItems([])
       } else {
-        // Normaliser : gérer les deux schémas (ancien: label/url, nouveau: name/file_url)
-        const normalized = (data || []).map((doc: any) => ({
-          ...doc,
-          name: doc.name || doc.label || 'Sans titre',
-          file_url: doc.file_url || doc.url || '',
-          file_size: doc.file_size || doc.size || 0,
-          mime_type: doc.mime_type || doc.type || '',
-          file_path: doc.file_path || '',
-        }))
+        // Fetch profiles separately mapping since relation may not be established in DB
+        const { data: profiles } = await supabase.from('profiles').select('id, name, company')
+        const profileMap = new Map((profiles || []).map(p => [p.id, p]))
+
+        // Identify current user
+        const { data: { session } } = await supabase.auth.getSession()
+        let user = session?.user
+        if (!user) {
+          try { user = JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { }
+        }
+
+        let isAdmin = false
+        if (user) {
+          if (user.role === 'admin' || user?.user_metadata?.role === 'admin') isAdmin = true
+          else {
+            const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+            if (profileRole?.role === 'admin') isAdmin = true
+          }
+        }
+
+        // Normaliser et filtrer
+        const normalized = (data || [])
+          .filter((doc: any) => {
+            if (isAdmin) return true
+            if (!user) return false
+            return doc.client_id === user.id || doc.uploaded_by === user.id
+          })
+          .map((doc: any) => {
+            const ownerId = doc.client_id || doc.uploaded_by
+            const docProfile = ownerId ? profileMap.get(ownerId) : null
+
+            return {
+              ...doc,
+              name: doc.name || doc.label || 'Sans titre',
+              file_url: doc.file_url || doc.url || '',
+              file_size: doc.file_size || doc.size || 0,
+              mime_type: doc.mime_type || doc.type || '',
+              file_path: doc.file_path || '',
+              profiles: docProfile ? {
+                name: docProfile.name,
+                company: docProfile.company
+              } : undefined
+            }
+          })
         setItems(normalized)
       }
     } catch (err) {

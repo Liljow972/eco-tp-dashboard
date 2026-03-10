@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Upload, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useEffect } from 'react'
 
 interface FileUploaderProps {
   onUploaded?: () => void
@@ -39,6 +40,44 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
 
   const MAX_SIZE = 10 * 1024 * 1024 // 10MB
   const PRIMARY = '#524f3d'
+
+  const [clients, setClients] = useState<any[]>([])
+  const [selectedClientId, setSelectedClientId] = useState<string>('')
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const user = session?.user || (() => {
+          try { return JSON.parse(localStorage.getItem('auth_user') || '{}') } catch { return null }
+        })()
+
+        if (user && user.role === 'admin' || user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin') {
+          // Verify role from profiles just to be sure
+          const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+          if (profile?.role === 'admin') {
+            setIsAdmin(true)
+            const { data } = await supabase.from('profiles').select('id, name').eq('role', 'client').order('name')
+            if (data) setClients(data)
+          }
+        } else {
+          const localUser = localStorage.getItem('auth_user')
+          if (localUser) {
+            const parsed = JSON.parse(localUser);
+            if (parsed.role === 'admin') {
+              setIsAdmin(true);
+              const { data } = await supabase.from('profiles').select('id, name').eq('role', 'client').order('name')
+              if (data) setClients(data)
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Erreur chargement clients', err)
+      }
+    }
+    fetchClients()
+  }, [])
 
   const processFile = async (file: File) => {
     setUploading(true)
@@ -90,18 +129,27 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
 
       // 6. Insertion BDD — tentative complète
       let dbError = null
+
+      const insertData: any = {
+        name: file.name,
+        label: file.name,
+        file_path: filePath,
+        file_url: publicUrl,
+        file_size: file.size,
+        mime_type: file.type || 'application/octet-stream',
+        type: docType,
+        uploaded_by: userId,
+      }
+
+      if (isAdmin && selectedClientId) {
+        insertData.client_id = selectedClientId
+      } else if (!isAdmin) {
+        insertData.client_id = userId
+      }
+
       const { error: err1 } = await supabase
         .from('documents')
-        .insert({
-          name: file.name,
-          label: file.name,
-          file_path: filePath,
-          file_url: publicUrl,
-          file_size: file.size,
-          mime_type: file.type || 'application/octet-stream',
-          type: docType,
-          uploaded_by: userId,
-        })
+        .insert(insertData)
       dbError = err1
 
       // 7. Fallback : colonnes minimales (si certaines colonnes manquent)
@@ -154,6 +202,27 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
 
   return (
     <div className="space-y-4">
+      {isAdmin && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Attribuer ce document à un client (Optionnel)
+          </label>
+          <select
+            value={selectedClientId}
+            onChange={(e) => setSelectedClientId(e.target.value)}
+            disabled={uploading}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-ecotp-green-500 focus:border-ecotp-green-500"
+          >
+            <option value="">-- Aucun client (Général) --</option>
+            {clients.map(client => (
+              <option key={client.id} value={client.id}>
+                {client.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
