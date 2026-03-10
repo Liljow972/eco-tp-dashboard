@@ -440,6 +440,35 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
           />
         )
       })()}
+
+      {/* Modal Assignation Client (Admin) */}
+      {assigningFile && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setAssigningFile(null)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold text-gray-900">Attribuer ce document</h3>
+              <button onClick={() => setAssigningFile(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-6">
+                Choisissez à quel client attribuer le fichier <strong>{assigningFile.name}</strong>. Il sera visible dans son espace personnel.
+              </p>
+              <select
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-ecotp-green-500 mb-4 bg-gray-50"
+                defaultValue={assigningFile.client_id || ""}
+                onChange={(e) => handleAssignClient(assigningFile, e.target.value === "" ? null : e.target.value)}
+              >
+                <option value="">-- Retirer l'attribution (Général) --</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,52 +10,42 @@ export default function DashboardRedirect() {
   const router = useRouter()
 
   useEffect(() => {
-    console.log("DashboardRedirect: Démarrage...")
     const redirectUser = async () => {
       try {
-        console.log("DashboardRedirect: En attente de AuthService...")
+        // Fast local memory skip
+        const stored = localStorage.getItem('auth_user')
+        if (stored) {
+          const u = JSON.parse(stored)
+          if (u.role === 'admin') {
+            router.push('/admin')
+            return
+          } else if (u.role === 'client') {
+            router.push('/client')
+            return
+          }
+        }
 
-        // Timeout de sécurité augmenté à 10s
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject("Timeout"), 10000)
-        )
-        const userPromise = AuthService.getCurrentUser()
+        // Fallback: Check active session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const role = session.user.user_metadata?.role || session.user.app_metadata?.role
+          if (role === 'admin') {
+            router.push('/admin')
+            return
+          } else if (role === 'client') {
+            router.push('/client')
+            return
+          }
 
-        const user = await Promise.race([userPromise, timeoutPromise]) as AuthUser | null
-
-        console.log("DashboardRedirect: User récupéré:", user)
-
-        if (!user) {
-          console.log("DashboardRedirect: Pas d'user -> Login")
-          router.push('/login')
+          // Deep fallback
+          const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
+          router.push(profile?.role === 'admin' ? '/admin' : '/client')
           return
         }
 
-        const timestamp = Date.now()
-        if (user.role === 'admin') {
-          console.log("DashboardRedirect: Admin -> /admin")
-          router.push(`/admin`)
-        } else {
-          console.log("DashboardRedirect: Client -> /client")
-          router.push(`/client`)
-        }
+        router.push('/login')
       } catch (error) {
-        console.error('Erreur redirection ou Timeout:', error)
-
-        // Essayer de récupérer la session directement
-        try {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session?.user) {
-            console.log("DashboardRedirect: Session trouvée, redirection vers /client")
-            router.push(`/client`)
-            return
-          }
-        } catch (sessionError) {
-          console.error('Erreur récupération session:', sessionError)
-        }
-
-        // Dernier recours: retour au login
-        console.log("DashboardRedirect: Erreur critique -> Login")
+        console.error('Erreur redirection:', error)
         router.push('/login')
       }
     }
