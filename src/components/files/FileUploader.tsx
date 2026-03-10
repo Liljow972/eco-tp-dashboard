@@ -51,20 +51,21 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
         let localUser = null
         try { localUser = JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { }
 
-        const { data: { session } } = await supabase.auth.getSession()
-        const sessionUser = session?.user
+        let userId = localUser?.id
+        let userIsAdmin = localUser?.role === 'admin'
 
-        const userId = sessionUser?.id || localUser?.id
-        let userIsAdmin = false
+        if (!userId) {
+          const { data: { session } } = await supabase.auth.getSession()
+          const sessionUser = session?.user
 
-        if (localUser?.role === 'admin') {
-          userIsAdmin = true
-        } else if (sessionUser) {
-          if (sessionUser.app_metadata?.role === 'admin' || sessionUser.user_metadata?.role === 'admin') {
-            userIsAdmin = true
-          } else if (userId) {
-            const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', userId).single()
-            if (profileRole?.role === 'admin') userIsAdmin = true
+          if (sessionUser) {
+            userId = sessionUser.id
+            if (sessionUser.app_metadata?.role === 'admin' || sessionUser.user_metadata?.role === 'admin') {
+              userIsAdmin = true
+            } else if (userId) {
+              const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', userId).single()
+              if (profileRole?.role === 'admin') userIsAdmin = true
+            }
           }
         }
 

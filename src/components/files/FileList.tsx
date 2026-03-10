@@ -47,25 +47,10 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
     try {
       setLoading(true)
 
-      // Timeout de 10s pour éviter le loading infini
-      const timeoutPromise = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), 10000)
-      )
-
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from('documents')
         .select('*')
         .order('created_at', { ascending: false })
-
-      const result = await Promise.race([queryPromise, timeoutPromise])
-
-      if (!result) {
-        console.warn('Timeout chargement documents')
-        setItems([])
-        return
-      }
-
-      const { data, error } = result as Awaited<typeof queryPromise>
 
       if (error) {
         console.error('Erreur chargement documents:', JSON.stringify(error))
@@ -79,20 +64,20 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
         let localUser = null
         try { localUser = JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { }
 
-        const { data: { session } } = await supabase.auth.getSession()
-        const sessionUser = session?.user
+        let userId = localUser?.id
+        let userIsAdmin = localUser?.role === 'admin'
 
-        const userId = sessionUser?.id || localUser?.id
-        let userIsAdmin = false
-
-        if (localUser?.role === 'admin') {
-          userIsAdmin = true
-        } else if (sessionUser) {
-          if (sessionUser.app_metadata?.role === 'admin' || sessionUser.user_metadata?.role === 'admin') {
-            userIsAdmin = true
-          } else {
-            const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', sessionUser.id).single()
-            if (profileRole?.role === 'admin') userIsAdmin = true
+        if (!userId) {
+          const { data: { session } } = await supabase.auth.getSession()
+          const sessionUser = session?.user
+          if (sessionUser) {
+            userId = sessionUser.id
+            if (sessionUser.app_metadata?.role === 'admin' || sessionUser.user_metadata?.role === 'admin') {
+              userIsAdmin = true
+            } else {
+              const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', sessionUser.id).single()
+              if (profileRole?.role === 'admin') userIsAdmin = true
+            }
           }
         }
 

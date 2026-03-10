@@ -16,25 +16,28 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role: string } | null>(null)
 
   useEffect(() => {
-    const loadUser = () => {
+    const loadUser = async () => {
       try {
         const stored = localStorage.getItem('auth_user')
         if (stored) {
           const u = JSON.parse(stored)
-          setCurrentUser({ name: u.name || u.email || 'Utilisateur', email: u.email || '', role: u.role || 'client' })
-          return
+          if (u.name && u.role) {
+            setCurrentUser({ name: u.name || u.email || 'Utilisateur', email: u.email || '', role: u.role || 'client' })
+            return
+          }
         }
       } catch { }
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          const meta = session.user.user_metadata
-          setCurrentUser({
-            name: meta?.name || meta?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
-            email: session.user.email || '',
-            role: meta?.role || 'client'
-          })
-        }
-      })
+
+      // Fallback
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const meta = session.user.user_metadata
+        setCurrentUser({
+          name: meta?.name || meta?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+          email: session.user.email || '',
+          role: meta?.role || 'client'
+        })
+      }
     }
     loadUser()
   }, [])

@@ -34,25 +34,27 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        // 1. localStorage (instantané)
+        let localUser: any = null
         try {
           const stored = localStorage.getItem('auth_user')
           if (stored) {
-            const u = JSON.parse(stored)
-            setIsAdmin(u.role === 'admin')
-            setCurrentUser({ name: u.name || u.email?.split('@')[0] || 'Utilisateur', role: u.role || 'client' })
+            localUser = JSON.parse(stored)
+            setIsAdmin(localUser.role === 'admin')
+            setCurrentUser({ name: localUser.name || localUser.email?.split('@')[0] || 'Utilisateur', role: localUser.role || 'client' })
           }
         } catch { }
 
-        // 2. Session Supabase (cache local, rapide)
+        // Si on a les données localement, on skip les appels réseau lents
+        if (localUser && localUser.role) return
+
+        // 2. Session Supabase (fallback)
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
           const meta = session.user.user_metadata
           const role = meta?.role || (pathname.startsWith('/admin') ? 'admin' : 'client')
-          if (!currentUser) {
-            setIsAdmin(role === 'admin')
-            setCurrentUser({ name: meta?.name || session.user.email?.split('@')[0] || 'Utilisateur', role })
-          }
+          setIsAdmin(role === 'admin')
+          setCurrentUser({ name: meta?.name || session.user.email?.split('@')[0] || 'Utilisateur', role })
+
           // 3. Profile BDD en arrière-plan
           supabase.from('profiles').select('name, role').eq('id', session.user.id).single()
             .then(({ data }) => {
@@ -61,7 +63,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
                 setCurrentUser({ name: data.name || meta?.name, role: data.role })
               }
             })
-        } else if (!currentUser) {
+        } else {
           setCurrentUser({ name: 'Invité', role: 'client' })
         }
       } catch (e) {
