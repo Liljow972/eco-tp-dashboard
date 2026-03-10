@@ -48,29 +48,30 @@ export default function FileUploader({ onUploaded }: FileUploaderProps) {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const user = session?.user || (() => {
-          try { return JSON.parse(localStorage.getItem('auth_user') || '{}') } catch { return null }
-        })()
+        let localUser = null
+        try { localUser = JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { }
 
-        if (user && user.role === 'admin' || user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin') {
-          // Verify role from profiles just to be sure
-          const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-          if (profile?.role === 'admin') {
-            setIsAdmin(true)
-            const { data } = await supabase.from('profiles').select('id, name').eq('role', 'client').order('name')
-            if (data) setClients(data)
+        const { data: { session } } = await supabase.auth.getSession()
+        const sessionUser = session?.user
+
+        const userId = sessionUser?.id || localUser?.id
+        let userIsAdmin = false
+
+        if (localUser?.role === 'admin') {
+          userIsAdmin = true
+        } else if (sessionUser) {
+          if (sessionUser.app_metadata?.role === 'admin' || sessionUser.user_metadata?.role === 'admin') {
+            userIsAdmin = true
+          } else if (userId) {
+            const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', userId).single()
+            if (profileRole?.role === 'admin') userIsAdmin = true
           }
-        } else {
-          const localUser = localStorage.getItem('auth_user')
-          if (localUser) {
-            const parsed = JSON.parse(localUser);
-            if (parsed.role === 'admin') {
-              setIsAdmin(true);
-              const { data } = await supabase.from('profiles').select('id, name').eq('role', 'client').order('name')
-              if (data) setClients(data)
-            }
-          }
+        }
+
+        if (userIsAdmin) {
+          setIsAdmin(true)
+          const { data } = await supabase.from('profiles').select('id, name').eq('role', 'client').order('name')
+          if (data) setClients(data)
         }
       } catch (err) {
         console.error('Erreur chargement clients', err)
