@@ -67,17 +67,22 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
         const profileMap = new Map((profiles || []).map(p => [p.id, p]))
 
         // Identify current user
-        const { data: { session } } = await supabase.auth.getSession()
-        let user = session?.user
-        if (!user) {
-          try { user = JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { }
-        }
+        let localUser = null
+        try { localUser = JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { }
 
+        const { data: { session } } = await supabase.auth.getSession()
+        const sessionUser = session?.user
+
+        const userId = sessionUser?.id || localUser?.id
         let isAdmin = false
-        if (user) {
-          if (user.role === 'admin' || user?.user_metadata?.role === 'admin') isAdmin = true
-          else {
-            const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+
+        if (localUser?.role === 'admin') {
+          isAdmin = true
+        } else if (sessionUser) {
+          if (sessionUser.app_metadata?.role === 'admin' || sessionUser.user_metadata?.role === 'admin') {
+            isAdmin = true
+          } else {
+            const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', sessionUser.id).single()
             if (profileRole?.role === 'admin') isAdmin = true
           }
         }
@@ -86,8 +91,8 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
         const normalized = (data || [])
           .filter((doc: any) => {
             if (isAdmin) return true
-            if (!user) return false
-            return doc.client_id === user.id || doc.uploaded_by === user.id
+            if (!userId) return false
+            return doc.client_id === userId || doc.uploaded_by === userId
           })
           .map((doc: any) => {
             const ownerId = doc.client_id || doc.uploaded_by
