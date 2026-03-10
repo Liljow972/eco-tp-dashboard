@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Download, Trash2, FileText, File, Image, FileSpreadsheet, Eye, PenTool, X, Loader2, CheckCircle } from 'lucide-react'
+import { Download, Trash2, FileText, File, Image, FileSpreadsheet, Eye, PenTool, X, Loader2, CheckCircle, UserPlus } from 'lucide-react'
 import SignatureModal from '@/components/documents/SignatureModal'
+
+interface Client {
+  id: string
+  name: string
+}
 
 interface FileListProps {
   searchQuery?: string
@@ -19,6 +24,7 @@ interface FileItem {
   file_size: number
   mime_type: string
   uploaded_by: string
+  client_id?: string
   created_at: string
   is_signed?: boolean
   signed_by_name?: string
@@ -33,6 +39,9 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
   const [loading, setLoading] = useState(true)
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
   const [signingFile, setSigningFile] = useState<FileItem | null>(null)
+  const [assigningFile, setAssigningFile] = useState<FileItem | null>(null)
+  const [clients, setClients] = useState<Client[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const fetchDocuments = async () => {
     try {
@@ -74,23 +83,32 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
         const sessionUser = session?.user
 
         const userId = sessionUser?.id || localUser?.id
-        let isAdmin = false
+        let userIsAdmin = false
 
         if (localUser?.role === 'admin') {
-          isAdmin = true
+          userIsAdmin = true
         } else if (sessionUser) {
           if (sessionUser.app_metadata?.role === 'admin' || sessionUser.user_metadata?.role === 'admin') {
-            isAdmin = true
+            userIsAdmin = true
           } else {
             const { data: profileRole } = await supabase.from('profiles').select('role').eq('id', sessionUser.id).single()
-            if (profileRole?.role === 'admin') isAdmin = true
+            if (profileRole?.role === 'admin') userIsAdmin = true
+          }
+        }
+
+        setIsAdmin(userIsAdmin)
+
+        if (userIsAdmin) {
+          const { data: clientsData } = await supabase.from('profiles').select('id, name').eq('role', 'client').order('name')
+          if (clientsData) {
+            setClients(clientsData)
           }
         }
 
         // Normaliser et filtrer
         const normalized = (data || [])
           .filter((doc: any) => {
-            if (isAdmin) return true
+            if (userIsAdmin) return true
             if (!userId) return false
             return doc.client_id === userId || doc.uploaded_by === userId
           })
@@ -166,6 +184,23 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
     } catch (err) {
       console.error('Erreur téléchargement:', err)
       alert('Impossible de télécharger ce fichier')
+    }
+  }
+
+  const handleAssignClient = async (item: FileItem, clientId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .update({ client_id: clientId })
+        .eq('id', item.id)
+
+      if (error) throw error
+
+      setAssigningFile(null)
+      fetchDocuments()
+    } catch (err) {
+      console.error('Erreur assignation:', err)
+      alert('Erreur lors de l\'attribution du document')
     }
   }
 
@@ -289,6 +324,16 @@ export default function FileList({ searchQuery, selectedOwner, selectedDate }: F
                   >
                     <Eye className="w-4 h-4" />
                   </button>
+                  {/* Assigner client (Admin uniquement) */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setAssigningFile(item)}
+                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                      title="Attribuer à un client"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </button>
+                  )}
                   {/* Signer (si pas déjà signé) */}
                   {!item.is_signed && (
                     <button
