@@ -1,15 +1,33 @@
 "use client"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Card from '@/components/Card'
 import FileUploader from '@/components/files/FileUploader'
 import FileList from '@/components/files/FileList'
 import { Search } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 export default function FilesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOwner, setSelectedOwner] = useState('Tous')
   const [selectedDate, setSelectedDate] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [clients, setClients] = useState<{ id: string, name: string }[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const init = async () => {
+      let localUser = null
+      try { localUser = JSON.parse(localStorage.getItem('auth_user') || 'null') } catch { }
+      const userIsAdmin = localUser?.role === 'admin'
+      setIsAdmin(userIsAdmin)
+
+      if (userIsAdmin) {
+        const { data } = await supabase.from('profiles').select('id, name').eq('role', 'client').order('name')
+        if (data) setClients(data)
+      }
+    }
+    init()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -39,6 +57,22 @@ export default function FilesPage() {
               onChange={(e) => setSelectedDate(e.target.value)}
             />
           </div>
+          {isAdmin && (
+            <div>
+              <label htmlFor="owner-filter" className="text-black font-medium">Client</label>
+              <select
+                id="owner-filter"
+                className="mt-1 w-full border border-ecotp-gray-200 rounded px-3 py-2 bg-white"
+                value={selectedOwner}
+                onChange={(e) => setSelectedOwner(e.target.value)}
+              >
+                <option value="Tous">Tous les clients</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex items-end">
             <button
               onClick={() => setRefreshKey(prev => prev + 1)}

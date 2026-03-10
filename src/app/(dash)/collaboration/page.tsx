@@ -257,7 +257,7 @@ export default function ClientManagementPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredClients.map((client) => (
-                <tr key={client.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={client.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleViewProjects(client.id)}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-ecotp-green-100 rounded-full flex items-center justify-center">
@@ -302,28 +302,28 @@ export default function ClientManagementPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => handleSendMessage(client)}
+                        onClick={(e) => { e.stopPropagation(); handleSendMessage(client); }}
                         className="p-2 text-ecotp-green-600 hover:bg-ecotp-green-50 rounded-lg transition-colors"
                         title="Envoyer un message"
                       >
                         <MessageSquare className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleViewProjects(client.id)}
+                        onClick={(e) => { e.stopPropagation(); handleViewProjects(client.id); }}
                         className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                         title="Voir les projets"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleEditClient(client)}
+                        onClick={(e) => { e.stopPropagation(); handleEditClient(client); }}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Modifier"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteClient(client.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteClient(client.id); }}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Supprimer"
                       >

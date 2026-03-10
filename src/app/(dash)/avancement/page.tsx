@@ -11,12 +11,13 @@ import PremiumCard from '@/components/premium/PremiumCard'
 import PhotoGallery from '@/components/PhotoGallery'
 import Messaging from '@/components/Messaging'
 
-import { ArrowLeft, Search, Filter, Plus, Edit, Wand2, Image as ImageIcon, MessageSquare, Lock, Eye } from 'lucide-react'
+import { ArrowLeft, Search, Filter, Plus, Edit, Wand2, Image as ImageIcon, MessageSquare, Lock, Eye, FileText } from 'lucide-react'
+import FileList from '@/components/files/FileList'
 
 export default function AvancementPage() {
   const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
-  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages'>('timeline')
+  const [currentTab, setCurrentTab] = useState<'timeline' | 'photos' | 'messages' | 'documents'>('timeline')
 
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
@@ -32,16 +33,27 @@ export default function AvancementPage() {
 
   // Handle Deep Link via URL
   useEffect(() => {
+    if (projects.length === 0) return
+
     const projectIdParam = searchParams.get('project')
-    if (projectIdParam && projects.length > 0) {
-      // Verify project exists in loaded list (security + consistency)
+    if (projectIdParam) {
+      // Verify project exists in loaded list
       const target = projects.find(p => p.id === projectIdParam)
       if (target) {
         setSelectedProjectId(projectIdParam)
         setViewMode('detail')
       }
     }
-  }, [searchParams, projects])
+
+    const clientIdParam = searchParams.get('client')
+    if (clientIdParam && !selectedProjectId) {
+      const clientProjects = projects.filter(p => p.client_id === clientIdParam)
+      if (clientProjects.length === 1) {
+        setSelectedProjectId(clientProjects[0].id)
+        setViewMode('detail')
+      }
+    }
+  }, [searchParams, projects, selectedProjectId])
 
   const checkRoleAndFetch = async () => {
     const user = await AuthService.getCurrentUser()
@@ -181,6 +193,11 @@ export default function AvancementPage() {
 
   const selectedProject = projects.find(p => p.id === selectedProjectId)
 
+  const clientIdParam = searchParams.get('client')
+  const displayedProjects = clientIdParam
+    ? projects.filter(p => p.client_id === clientIdParam)
+    : projects
+
   if (loading) return <div className="p-8 text-center text-gray-500">Chargement...</div>
 
   return (
@@ -233,7 +250,12 @@ export default function AvancementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {projects.map((proj) => (
+                {displayedProjects.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Aucun projet trouvé</td>
+                  </tr>
+                )}
+                {displayedProjects.map((proj) => (
                   <tr key={proj.id} className="hover:bg-gray-50/50 transition-colors group cursor-pointer" onClick={() => handleSelectProject(proj.id)}>
                     <td className="px-6 py-4 font-medium text-gray-900">{proj.name}</td>
                     <td className="px-6 py-4 text-gray-500">{proj.profiles?.name || '—'}</td>
@@ -335,6 +357,16 @@ export default function AvancementPage() {
                 <MessageSquare className="w-4 h-4" />
                 Messagerie
               </button>
+              <button
+                onClick={() => setCurrentTab('documents')}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${currentTab === 'documents'
+                  ? 'border-ecotp-green-500 text-ecotp-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                <FileText className="w-4 h-4" />
+                Documents
+              </button>
             </nav>
           </div>
 
@@ -362,6 +394,12 @@ export default function AvancementPage() {
                 clientId={selectedProject.client_id}
                 clientName={selectedProject.profiles?.name || 'Client'}
               />
+            )}
+
+            {currentTab === 'documents' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mt-4 overflow-hidden">
+                <FileList selectedOwner={selectedProject.profiles?.name || 'Tous'} />
+              </div>
             )}
           </div>
         </div>
